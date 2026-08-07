@@ -62,6 +62,14 @@ interface NavItemDef {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+function initialsFor(fullName?: string): string {
+  if (!fullName) return "?";
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0]?.[0] || "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase() || "?";
+}
+
 export default function Layout() {
   const { user, logout } = useAuth();
   const branding = useBranding();
@@ -98,20 +106,19 @@ export default function Layout() {
       <aside
         className={`${collapsed ? "w-16" : "w-60"} shrink-0 bg-white flex flex-col h-screen sticky top-0 transition-[width] duration-150`}
       >
-        <div className={`flex items-center gap-2 h-20 border-b border-white/10 shrink-0 ${collapsed ? "justify-center px-2" : "px-4"}`}>
-          {collapsed ? (
-            // Collapsed = icon-only width — an arbitrary uploaded logo isn't
-            // reliably croppable into a small icon, so this always falls
-            // back to the default mark rather than distorting a custom logo.
-            <img src="/logo-icon.png" alt="FitWork" className="w-8 h-8 shrink-0 object-contain" />
-          ) : branding.logoUrl ? (
-            <div className="h-12 w-28 flex items-center justify-center shrink-0">
-              <img src={branding.logoUrl} alt={`${branding.appName} logo`} className="max-h-full max-w-full object-contain" />
+        <div className={`flex items-center gap-2.5 h-20 border-b border-white/10 shrink-0 ${collapsed ? "justify-center px-2" : "px-4"}`}>
+          <div
+            className="w-9 h-9 rounded-full bg-clinic-600 text-white flex items-center justify-center text-sm font-semibold shrink-0"
+            title={`${user?.fullName} (${user?.role})`}
+          >
+            {initialsFor(user?.fullName)}
+          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-white truncate">{user?.fullName}</div>
+              <div className="text-xs text-clinic-300 truncate">{user?.role}</div>
             </div>
-          ) : (
-            <img src="/logo-icon.png" alt="FitWork" className="w-8 h-8 shrink-0 object-contain" />
           )}
-          {!collapsed && <span className="font-semibold text-lg text-white tracking-wide truncate">{branding.appName}</span>}
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
@@ -126,8 +133,27 @@ export default function Layout() {
           })}
         </nav>
 
-        <div className={`border-t border-white/10 shrink-0 space-y-2 ${collapsed ? "p-2" : "p-3"}`}>
+        <div className={`border-t border-white/10 shrink-0 space-y-3 ${collapsed ? "p-2" : "p-3"}`}>
           {!collapsed && <LiveClock />}
+
+          <div className={`flex items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
+            {collapsed ? (
+              // Collapsed = icon-only width — an arbitrary uploaded logo isn't
+              // reliably croppable into a small icon, so this always falls
+              // back to the default mark rather than distorting a custom logo.
+              <img src="/logo-icon.png" alt="FitWork" className="w-7 h-7 shrink-0 object-contain" />
+            ) : branding.logoUrl ? (
+              <div className="h-8 w-24 flex items-center shrink-0">
+                <img src={branding.logoUrl} alt={`${branding.appName} logo`} className="max-h-full max-w-full object-contain" />
+              </div>
+            ) : (
+              <>
+                <img src="/logo-icon.png" alt="FitWork" className="w-6 h-6 shrink-0 object-contain" />
+                <span className="font-semibold text-sm text-white tracking-wide truncate">{branding.appName}</span>
+              </>
+            )}
+          </div>
+
           {!collapsed && (
             <div className="text-sm text-clinic-100 truncate" title={`${user?.fullName} (${user?.role})`}>
               {user?.fullName} <span className="text-clinic-300">({user?.role})</span>
