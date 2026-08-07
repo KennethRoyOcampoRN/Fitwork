@@ -125,7 +125,7 @@ export default function AdminImport() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border rounded-lg p-4">
+      <div className="bg-white border rounded-xl p-4">
         <h2 className="font-medium mb-2">1. Download a template workbook</h2>
         <p className="text-xs text-gray-500 mb-2">For APE templates, use the APE Templates tab instead — this generates the fixed-column workbook for Employees / Medications / Historical Notes.</p>
         <div className="flex gap-2 items-center">
@@ -136,7 +136,7 @@ export default function AdminImport() {
         </div>
       </div>
 
-      <div className="bg-white border rounded-lg p-4">
+      <div className="bg-white border rounded-xl p-4">
         <h2 className="font-medium mb-2">2. Upload the filled-in workbook (any import type — auto-identified from its stamp)</h2>
         <p className="text-xs text-gray-500 mb-2">
           This includes filled-in <strong>APE</strong> workbooks — download those from the{" "}
@@ -164,7 +164,7 @@ export default function AdminImport() {
       </div>
 
       {result && (
-        <div className="bg-white border rounded-lg p-4">
+        <div className="bg-white border rounded-xl p-4">
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-medium">Dry-run preview — {result.importType}{result.examYear ? ` (${result.examYear})` : ""}</h2>
             <button onClick={commit} disabled={busy || result.summary.error > 0 && result.summary.new + result.summary.update === 0} className="bg-clinic-600 text-white rounded px-3 py-1.5 text-sm disabled:opacity-50">
@@ -226,13 +226,13 @@ export default function AdminImport() {
       )}
 
       {committed && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm">
           Import committed: {committed.createdCount} created, {committed.updatedCount} updated.
           <a href={`/api/imports/${committed.id}/report`} className="text-clinic-300 underline ml-2">Download result report</a>
         </div>
       )}
 
-      <div className="bg-white border rounded-lg">
+      <div className="bg-white border rounded-xl">
         <h2 className="font-medium p-4 pb-0">Import history</h2>
         <p className="text-xs text-gray-500 px-4 pb-2">
           A dry-run preview that was never committed is greyed out with a "Not committed" badge — nothing from that

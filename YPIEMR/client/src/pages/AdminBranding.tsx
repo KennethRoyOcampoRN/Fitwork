@@ -135,8 +135,8 @@ export default function AdminBranding() {
         for every user — no restart needed.
       </p>
 
-      <form onSubmit={save} className="bg-white border rounded-lg p-4 space-y-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={save} className="bg-white border rounded-xl p-4 space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-2">Clinic/Company name</label>
             <input
@@ -161,7 +161,7 @@ export default function AdminBranding() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-2">Clinic address</label>
             <input
@@ -203,7 +203,7 @@ export default function AdminBranding() {
 
         <div>
           <label className="block text-sm font-medium mb-2">Logo</label>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="h-16 w-40 rounded-lg bg-clinic-900 flex items-center justify-center overflow-hidden shrink-0">
               {logoPreview || branding.logoUrl ? (
                 <img src={logoPreview || branding.logoUrl || undefined} className="max-h-full max-w-full object-contain" />
@@ -226,7 +226,7 @@ export default function AdminBranding() {
 
         <div>
           <label className="block text-sm font-medium mb-2">Login background</label>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="w-24 h-14 rounded-lg bg-gray-100 border overflow-hidden shrink-0">
               {backgroundPreview || branding.backgroundUrl ? (
                 <img src={backgroundPreview || branding.backgroundUrl || undefined} className="w-full h-full object-cover" />
@@ -239,7 +239,7 @@ export default function AdminBranding() {
           <p className="text-xs text-gray-400 mt-1">Shown behind the sign-in card on the login page.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-2">Primary color</label>
             <div className="flex items-center gap-2">

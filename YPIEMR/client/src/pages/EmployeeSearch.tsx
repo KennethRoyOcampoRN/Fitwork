@@ -46,7 +46,7 @@ export default function EmployeeSearch() {
           </button>
         )}
       </div>
-      <div className="bg-white border rounded-lg divide-y">
+      <div className="bg-white border rounded-xl divide-y">
         {results.length === 0 && (
           <div className="p-4 text-sm text-gray-500">
             No matches found. {q && <>No employee with code or name matching "{q}" exists yet.{" "}</>}

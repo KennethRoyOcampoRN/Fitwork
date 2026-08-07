@@ -83,13 +83,13 @@ export default function Layout() {
   navItems.push({ key: "verify-cert", label: "Verify Certificate", to: "/certificates/verify", icon: IconTag });
   if (user?.role === "ADMIN") navItems.push({ key: "admin", label: "Admin", to: "/admin", icon: IconShield });
 
-  // Solid accent fill for the active item (not just a border) — reads more
-  // clearly as "current page" against the dark navy sidebar fill than a
-  // subtle border would.
+  // Soft accent-tinted fill for the active item — reads clearly as "current
+  // page" against the glass sidebar without the heavier solid block a full
+  // accent fill would put behind list icons/text.
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
       isActive
-        ? "bg-clinic-600 text-white shadow-sm"
+        ? "bg-[rgba(228,98,43,0.14)] text-clinic-300"
         : "text-clinic-100 hover:bg-white/10 hover:text-white"
     } ${collapsed ? "justify-center px-2" : ""}`;
 

@@ -70,7 +70,7 @@ export default function DrugTestTab({ employeeId, focusId }: { employeeId: strin
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <form onSubmit={submit} className="bg-white border rounded-xl p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
           <input placeholder="Test date" type="date" value={form.testDate} onChange={(e) => setForm({ ...form, testDate: e.target.value })} className="border rounded px-2 py-1" required />
           <select value={form.result} onChange={(e) => setForm({ ...form, result: e.target.value })} className="border rounded px-2 py-1" required>
             <option value="">Result</option>
@@ -87,7 +87,7 @@ export default function DrugTestTab({ employeeId, focusId }: { employeeId: strin
       <div className="space-y-2">
         {tests.length === 0 && <p className="text-sm text-gray-400">No drug test results yet.</p>}
         {tests.map((t) => (
-          <div key={t.id} id={`drugtest-${t.id}`} className={`bg-white border rounded-lg p-3 ${focusId === t.id ? "ring-2 ring-clinic-400" : ""}`}>
+          <div key={t.id} id={`drugtest-${t.id}`} className={`bg-white border rounded-xl p-3 ${focusId === t.id ? "ring-2 ring-clinic-400" : ""}`}>
             <div className="w-full flex justify-between items-center gap-2">
               <button onClick={() => setExpanded(expanded === t.id ? null : t.id)} className="flex-1 flex justify-between items-center text-left">
                 <span className="font-medium">{new Date(t.testDate).toLocaleDateString()}</span>

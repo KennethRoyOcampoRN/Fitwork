@@ -92,7 +92,7 @@ export default function CertificateVerification() {
       {notFound && <p className="text-sm text-red-600">No certificate found with this control number.</p>}
 
       {result?.type === "EMPLOYEE" && (
-        <div className="bg-white border rounded-lg p-4 text-sm space-y-1">
+        <div className="bg-white border rounded-xl p-4 text-sm space-y-1">
           <div className="flex items-center justify-between mb-2">
             <p className="text-green-700 font-medium">Valid certificate — employee record</p>
             <button
@@ -117,7 +117,7 @@ export default function CertificateVerification() {
       )}
 
       {result?.type === "STANDALONE" && (
-        <div className="bg-white border rounded-lg p-4 text-sm space-y-1">
+        <div className="bg-white border rounded-xl p-4 text-sm space-y-1">
           <p className="text-green-700 font-medium mb-2">Valid certificate — standalone (non-employee)</p>
           <div>Control number: {result.controlNumber}</div>
           <div>Issued: {new Date(result.issuedAt).toLocaleString()}</div>

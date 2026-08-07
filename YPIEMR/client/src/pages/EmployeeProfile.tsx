@@ -202,9 +202,9 @@ export default function EmployeeProfile() {
 
       {/* Identity panel: photo + name/code on the left, demographic summary
           and quick-stat tiles filling the rest, actions on the far right. */}
-      <div className="bg-white border rounded-xl p-5 mb-4">
+      <div className="bg-white border rounded-xl p-4 mb-4">
         <div className="flex flex-col sm:flex-row gap-5">
-          <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:w-36 shrink-0">
+          <div className="flex items-center gap-3 sm:flex-col sm:items-start sm:w-36 shrink-0">
             {canEditEmployee ? (
               <button onClick={() => setShowPhotoModal(true)} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-clinic-100 brand-chip overflow-hidden flex items-center justify-center shrink-0">
                 {employee.photoPath ? <img src={`/api/employees/${employee.id}/photo/full`} className="w-full h-full object-cover" /> : <IconUser className="w-10 h-10 sm:w-12 sm:h-12 text-clinic-400" />}
@@ -301,7 +301,7 @@ export default function EmployeeProfile() {
           just falls to whichever row it lands on, which reads fine in
           practice. Active state mirrors the sidebar's active nav item
           (solid clinic-600 fill) so "selected" is unambiguous at a glance. */}
-      <div className="bg-white border rounded-lg p-2 mb-4">
+      <div className="bg-white border rounded-xl p-2 mb-4">
         <div className="flex flex-wrap items-center gap-1.5">
           {[
             [["overview", "Overview"]],
@@ -329,8 +329,8 @@ export default function EmployeeProfile() {
       </div>
 
       {tab === "overview" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white border rounded-lg p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-white border rounded-xl p-4">
             <h2 className="font-medium mb-2">Emergency contact</h2>
             <p className="text-sm text-gray-600">
               {employee.emergencyContactName || "—"} ({employee.emergencyContactRelation || "—"})<br />
@@ -339,7 +339,7 @@ export default function EmployeeProfile() {
             <h2 className="font-medium mt-4 mb-2">Chronic conditions</h2>
             <p className="text-sm text-gray-600">{employee.chronicConditions || "None recorded"}</p>
           </div>
-          <div className="bg-white border rounded-lg p-4">
+          <div className="bg-white border rounded-xl p-4">
             <h2 className="font-medium mb-2">Recent activity</h2>
             <ul className="text-sm divide-y">
               {timeline.length === 0 && <li className="py-2 text-gray-400">No recorded events yet.</li>}
@@ -477,8 +477,8 @@ function VitalsTab({ employeeId, onRecorded }: { employeeId: string; onRecorded:
         <StatTile icon={IconHeartPulse} label="Blood Pressure" value={latest?.systolic ? `${latest.systolic}/${latest.diastolic}` : "—"} />
         <StatTile icon={IconDroplet} label="Readings on file" value={combined.length} />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <form onSubmit={submit} className="bg-white border rounded-lg p-4 space-y-2 md:col-span-1">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <form onSubmit={submit} className="bg-white border rounded-xl p-4 space-y-2 md:col-span-1">
         <h2 className="font-medium mb-2">Record vitals</h2>
         {(["heightCm", "weightKg", "systolic", "diastolic", "pulseRate"] as const).map((f) => (
           <input
@@ -496,7 +496,7 @@ function VitalsTab({ employeeId, onRecorded }: { employeeId: string; onRecorded:
         </button>
       </form>
       <div className="md:col-span-2 space-y-4">
-      <div className="bg-white border rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="bg-white border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <p className="text-xs text-gray-400 sm:col-span-2 -mb-2">Combines routine vitals check-ins with Annual Physical Exam readings.</p>
         <div>
           <h3 className="text-xs font-medium text-gray-500 mb-1">Height (cm)</h3>
@@ -530,7 +530,7 @@ function VitalsTab({ employeeId, onRecorded }: { employeeId: string; onRecorded:
           />
         </div>
       </div>
-      <div className="bg-white border rounded-lg overflow-x-auto">
+      <div className="bg-white border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>

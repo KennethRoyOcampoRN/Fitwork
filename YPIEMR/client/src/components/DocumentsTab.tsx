@@ -74,7 +74,7 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {docs.length === 0 && <p className="text-sm text-gray-400 col-span-full">No documents uploaded yet.</p>}
         {docs.map((d) => (
-          <div key={d.id} id={`doc-${d.id}`} className={`bg-white border rounded-lg p-3 text-sm ${d.isArchived ? "opacity-60" : ""} ${focusId === d.id ? "ring-2 ring-clinic-400" : ""}`}>
+          <div key={d.id} id={`doc-${d.id}`} className={`bg-white border rounded-xl p-3 text-sm ${d.isArchived ? "opacity-60" : ""} ${focusId === d.id ? "ring-2 ring-clinic-400" : ""}`}>
             <div className="flex justify-between items-start">
               <span className="text-xs bg-gray-100 rounded px-1.5 py-0.5">{d.category.replace(/_/g, " ")}</span>
               {d.isArchived && <span className="text-xs text-red-600">Archived</span>}
@@ -104,7 +104,7 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
 
       {preview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 w-full max-w-3xl max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-xl p-4 w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold">{preview.title}</h2>
               <button onClick={() => setPreviewId(null)} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -162,7 +162,7 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <form onSubmit={submit} className="bg-white rounded-lg p-4 w-full max-w-md space-y-2">
+      <form onSubmit={submit} className="bg-white rounded-xl p-4 w-full max-w-md space-y-2">
         <div className="flex justify-between items-center mb-1">
           <h2 className="font-semibold">Upload document</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>

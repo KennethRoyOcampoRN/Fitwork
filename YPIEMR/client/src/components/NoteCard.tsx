@@ -48,7 +48,7 @@ export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onCh
   }
 
   return (
-    <div className={`bg-white border rounded-lg p-4 ${note.status === "VOIDED" ? "opacity-70" : ""}`}>
+    <div className={`bg-white border rounded-xl p-4 ${note.status === "VOIDED" ? "opacity-70" : ""}`}>
       <div className="flex justify-between items-start mb-2">
         <div>
           <span className="font-medium">{note.author.fullName}</span>

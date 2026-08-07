@@ -93,7 +93,7 @@ export default function PreEmploymentTab({ employeeId, focusId }: { employeeId: 
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <form onSubmit={submit} className="bg-white border rounded-xl p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
           <input placeholder="Exam date" type="date" value={form.examDate} onChange={(e) => setForm({ ...form, examDate: e.target.value })} className="border rounded px-2 py-1" />
           <input placeholder="Provider" value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="border rounded px-2 py-1" />
           <input placeholder="Height (cm)" type="number" value={form.heightCm} onChange={(e) => setForm({ ...form, heightCm: e.target.value })} className="border rounded px-2 py-1" />
@@ -126,7 +126,7 @@ export default function PreEmploymentTab({ employeeId, focusId }: { employeeId: 
       <div className="space-y-2">
         {exams.length === 0 && <p className="text-sm text-gray-400">No pre-employment exams yet.</p>}
         {exams.map((p) => (
-          <div key={p.id} id={`preemployment-${p.id}`} className={`bg-white border rounded-lg p-3 ${focusId === p.id ? "ring-2 ring-clinic-400" : ""}`}>
+          <div key={p.id} id={`preemployment-${p.id}`} className={`bg-white border rounded-xl p-3 ${focusId === p.id ? "ring-2 ring-clinic-400" : ""}`}>
             <div className="w-full flex justify-between items-center gap-2">
               <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="flex-1 flex justify-between items-center text-left">
                 <span className="font-medium">{p.examDate ? new Date(p.examDate).toLocaleDateString() : new Date(p.createdAt).toLocaleDateString()}</span>

@@ -16,7 +16,7 @@ interface Props {
 export default function StatTile({ icon: Icon, label, value, sublabel }: Props) {
   return (
     <div className="flex items-center gap-3 rounded-xl bg-clinic-600 text-white p-3.5 min-w-0 shadow-sm">
-      <div className="w-11 h-11 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+      <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
         <Icon className="w-6 h-6" />
       </div>
       <div className="min-w-0">

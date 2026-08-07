@@ -47,7 +47,7 @@ export default function AdminAudit() {
         <a href={`/api/audit/export.csv?${buildQuery()}`} className="bg-clinic-600 text-white rounded px-3 py-1.5 text-sm">Export CSV</a>
       </div>
 
-      <div className="bg-white border rounded-lg p-3 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+      <div className="bg-white border rounded-xl p-3 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
         <select value={filters.action} onChange={(e) => setFilters({ ...filters, action: e.target.value })} className="border rounded px-2 py-1">
           <option value="">All actions</option>
           {ACTIONS.map((a) => <option key={a} value={a}>{a.replace(/_/g, " ")}</option>)}
@@ -58,7 +58,7 @@ export default function AdminAudit() {
         <button onClick={load} className="col-span-2 sm:col-span-1 bg-gray-100 rounded px-2 py-1">Apply filters</button>
       </div>
 
-      <div className="bg-white border rounded-lg overflow-x-auto">
+      <div className="bg-white border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr><th className="p-2">Time</th><th className="p-2">User</th><th className="p-2">Action</th><th className="p-2">Entity</th><th className="p-2">Employee</th><th className="p-2">IP</th></tr>

@@ -60,7 +60,7 @@ export default function EmployeeExportModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-5 w-full max-w-md">
+      <div className="bg-white rounded-xl p-4 w-full max-w-md">
         <div className="flex justify-between items-center mb-2">
           <h2 className="font-semibold">Export medical record</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>

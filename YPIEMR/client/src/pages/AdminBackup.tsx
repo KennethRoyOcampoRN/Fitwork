@@ -63,7 +63,7 @@ export default function AdminBackup() {
     <div className="max-w-lg">
       <h2 className="font-medium mb-3">Backup</h2>
 
-      <div className={`border rounded-lg p-4 mb-4 ${lastBackup?.isStale ? "bg-red-50 border-red-200" : "bg-white"}`}>
+      <div className={`border rounded-xl p-4 mb-4 ${lastBackup?.isStale ? "bg-red-50 border-red-200" : "bg-white"}`}>
         {status === undefined && <p className="text-sm text-gray-400">Loading...</p>}
         {status && lastBackup === null && <p className="text-sm text-red-700">No backup has ever run on this server.</p>}
         {lastBackup && (
@@ -90,7 +90,7 @@ export default function AdminBackup() {
       </p>
 
       {status && (
-        <div className="border rounded-lg p-4 mt-4 bg-white">
+        <div className="border rounded-xl p-4 mt-4 bg-white">
           <h3 className="text-sm font-medium mb-2">Backup folder location</h3>
           <p className="text-xs text-gray-500 mb-2">
             Copy files from here to wherever your company wants an offsite copy (e.g. a shared HRD drive) — FITWORK never

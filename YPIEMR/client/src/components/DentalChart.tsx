@@ -80,7 +80,7 @@ export default function DentalChart({ employeeId }: { employeeId: string }) {
   }
 
   return (
-    <div className="bg-white border rounded-lg p-4 mb-4">
+    <div className="bg-white border rounded-xl p-4 mb-4">
       <div className="flex items-center justify-between mb-2">
         <h2 className="font-medium">Dental Chart</h2>
         {!canEdit && <span className="text-xs text-gray-400">View only — only dentists can update tooth status</span>}
@@ -141,7 +141,7 @@ function ToothEditModal({ employeeId, tooth, onClose, onSaved }: { employeeId: s
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <form onSubmit={save} className="bg-white rounded-lg p-4 w-full max-w-sm space-y-3">
+      <form onSubmit={save} className="bg-white rounded-xl p-4 w-full max-w-sm space-y-3">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold">Tooth #{tooth.toothNumber}</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>

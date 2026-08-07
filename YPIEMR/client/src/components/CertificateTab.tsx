@@ -105,7 +105,7 @@ export default function CertificateTab({
       </div>
 
       {showForm && canIssue && (
-        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 space-y-2 text-sm">
+        <form onSubmit={submit} className="bg-white border rounded-xl p-4 mb-4 space-y-2 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input placeholder="Patient name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-2 py-1" required />
             <input placeholder="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="border rounded px-2 py-1" required />
@@ -130,7 +130,7 @@ export default function CertificateTab({
       <div className="space-y-2">
         {certificates.length === 0 && <p className="text-sm text-gray-400">No medical certificates issued yet.</p>}
         {certificates.map((c) => (
-          <div key={c.id} id={`certificate-${c.id}`} className={`bg-white border rounded-lg p-3 ${focusId === c.id ? "ring-2 ring-clinic-400" : ""}`}>
+          <div key={c.id} id={`certificate-${c.id}`} className={`bg-white border rounded-xl p-3 ${focusId === c.id ? "ring-2 ring-clinic-400" : ""}`}>
             <div className="w-full flex justify-between items-center gap-2">
               <button onClick={() => setExpanded(expanded === c.id ? null : c.id)} className="flex-1 flex justify-between items-center text-left">
                 <span className="font-medium">{c.controlNumber}</span>

@@ -43,7 +43,7 @@ export default function PermanentDeleteButton({
       </button>
       {open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-5 w-full max-w-md">
+          <div className="bg-white rounded-xl p-4 w-full max-w-md">
             <h2 className="font-semibold mb-2 text-red-800">Permanently delete this record?</h2>
             <p className="text-sm text-gray-700 mb-3">{description}</p>
             <p className="text-xs text-gray-500 mb-3">

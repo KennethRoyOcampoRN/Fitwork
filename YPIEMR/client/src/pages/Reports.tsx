@@ -43,7 +43,7 @@ function DepartmentSelect({ value, onChange, departments }: { value: string; onC
 
 function ReportCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border rounded-lg p-4">
+    <div className="bg-white border rounded-xl p-4">
       <h2 className="font-medium mb-1">{title}</h2>
       <p className="text-xs text-gray-500 mb-3">{description}</p>
       {children}

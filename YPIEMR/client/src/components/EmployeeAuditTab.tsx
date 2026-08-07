@@ -17,7 +17,7 @@ export default function EmployeeAuditTab({ employeeId }: { employeeId: string })
   }, [employeeId]);
 
   return (
-    <div className="bg-white border rounded-lg overflow-x-auto">
+    <div className="bg-white border rounded-xl overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 text-left">
           <tr><th className="p-2">Time</th><th className="p-2">User</th><th className="p-2">Action</th><th className="p-2">Entity</th></tr>

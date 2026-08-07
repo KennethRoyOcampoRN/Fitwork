@@ -58,8 +58,8 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <form onSubmit={submit} className="bg-white border rounded-lg p-4 space-y-2 lg:col-span-1">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <form onSubmit={submit} className="bg-white border rounded-xl p-4 space-y-2 lg:col-span-1">
         <h2 className="font-medium mb-2">Log medication dispensed</h2>
         <input placeholder="Drug name" value={form.drugName} onChange={(e) => setForm({ ...form, drugName: e.target.value })} className="w-full border rounded px-2 py-1 text-sm" required />
         <div className="grid grid-cols-2 gap-2">
@@ -74,7 +74,7 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
         <button disabled={busy} className="w-full bg-clinic-600 text-white rounded py-1.5 text-sm disabled:opacity-50">{busy ? "Saving..." : "Log dispensed"}</button>
       </form>
 
-      <div className="bg-white border rounded-lg lg:col-span-2 overflow-x-auto">
+      <div className="bg-white border rounded-xl lg:col-span-2 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr><th className="p-2">Date</th><th className="p-2">Drug</th><th className="p-2">Dose</th><th className="p-2">Dispensed by</th><th className="p-2"></th></tr>

@@ -120,7 +120,7 @@ export default function NewNote() {
 
   return (
     <div className="max-w-2xl">
-      <div className="bg-white border rounded-lg p-4 mb-4 sticky top-0">
+      <div className="bg-white border rounded-xl p-4 mb-4 sticky top-0">
         <div className="text-xs text-gray-400">New {NOTE_TYPE_LABEL[noteType]}</div>
         <div className="font-semibold">{employee.lastName}, {employee.firstName} <span className="text-gray-400 font-normal">#{employee.employeeCode}</span></div>
         {employee.knownAllergies && (
@@ -128,7 +128,7 @@ export default function NewNote() {
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="bg-white border rounded-lg p-4 space-y-3">
+      <form onSubmit={onSubmit} className="bg-white border rounded-xl p-4 space-y-3">
         <div>
           <label className="block text-sm font-medium mb-1">Visit category</label>
           <select value={form.visitCategory} onChange={(e) => setForm({ ...form, visitCategory: e.target.value })} className="w-full border rounded px-2 py-1 text-sm">
@@ -190,7 +190,7 @@ export default function NewNote() {
 
       {confirmOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm">
+          <div className="bg-white rounded-xl p-4 max-w-sm">
             <h2 className="font-semibold mb-2">Save this note permanently?</h2>
             <p className="text-sm text-gray-600 mb-4">
               This note will be permanently saved and cannot be edited (beyond a short correction window). Continue?

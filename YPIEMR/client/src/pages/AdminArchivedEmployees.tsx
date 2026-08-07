@@ -60,7 +60,7 @@ export default function AdminArchivedEmployees() {
         Archived employees are hidden from search and normal lists, but their clinical history, notes, and audit
         trail remain intact. Restoring returns a record to active use.
       </p>
-      <div className="bg-white border rounded-lg overflow-x-auto">
+      <div className="bg-white border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>

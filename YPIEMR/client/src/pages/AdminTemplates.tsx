@@ -56,7 +56,7 @@ export default function AdminTemplates() {
         </button>
       </div>
 
-      <div className="bg-white border rounded-lg divide-y">
+      <div className="bg-white border rounded-xl divide-y">
         {[...latestByName.values()].length === 0 && <div className="p-4 text-sm text-gray-400">No templates yet.</div>}
         {[...latestByName.values()].map((t) => (
           <div key={t.id} className="p-3 flex justify-between items-center">
@@ -138,7 +138,7 @@ function TemplateBuilder({ catalog, template, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-4 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl p-4 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-3">
           <h2 className="font-semibold">{isNew ? "New APE template" : `Edit ${template.name}`}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -148,7 +148,7 @@ function TemplateBuilder({ catalog, template, onClose, onSaved }: {
         <input placeholder="Template name" value={name} onChange={(e) => setName(e.target.value)} className="w-full border rounded px-2 py-1 text-sm mb-2" />
         <textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full border rounded px-2 py-1 text-sm mb-3" rows={2} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <h3 className="text-sm font-medium mb-2">Standard field catalog</h3>
             <div className="border rounded max-h-60 overflow-y-auto divide-y">
@@ -226,7 +226,7 @@ function GenerateModal({ template, onClose }: { template: Template; onClose: () 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-4 w-full max-w-sm">
+      <div className="bg-white rounded-xl p-4 w-full max-w-sm">
         <h2 className="font-semibold mb-3">Generate workbook — {template.name}</h2>
         <div className="space-y-2 text-sm">
           <label className="block">Exam year

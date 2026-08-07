@@ -94,7 +94,7 @@ export default function ApeTab({ employeeId, focusId }: { employeeId: string; fo
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <form onSubmit={submit} className="bg-white border rounded-xl p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
           <input placeholder="Exam year" type="number" value={form.examYear} onChange={(e) => setForm({ ...form, examYear: e.target.value })} className="border rounded px-2 py-1" required />
           <input placeholder="Exam date" type="date" value={form.examDate} onChange={(e) => setForm({ ...form, examDate: e.target.value })} className="border rounded px-2 py-1" />
           <input placeholder="Provider" value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="border rounded px-2 py-1" />
@@ -128,7 +128,7 @@ export default function ApeTab({ employeeId, focusId }: { employeeId: string; fo
       <div className="space-y-2">
         {apes.length === 0 && <p className="text-sm text-gray-400">No APE records yet.</p>}
         {apes.map((a) => (
-          <div key={a.id} id={`ape-${a.id}`} className={`bg-white border rounded-lg p-3 ${focusId === a.id ? "ring-2 ring-clinic-400" : ""}`}>
+          <div key={a.id} id={`ape-${a.id}`} className={`bg-white border rounded-xl p-3 ${focusId === a.id ? "ring-2 ring-clinic-400" : ""}`}>
             <div className="w-full flex justify-between items-center gap-2">
               <button onClick={() => setExpanded(expanded === a.id ? null : a.id)} className="flex-1 flex justify-between items-center text-left">
                 <span className="font-medium">{a.examYear}{a.examDate ? ` — ${new Date(a.examDate).toLocaleDateString()}` : ""}</span>

@@ -30,7 +30,7 @@ export default function AllEmployees() {
       <p className="text-sm text-gray-500 mb-4">
         Every active employee on file. ⚠ marks a known allergy or chronic condition — open the profile for details.
       </p>
-      <div className="bg-white border rounded-lg overflow-x-auto">
+      <div className="bg-white border rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>

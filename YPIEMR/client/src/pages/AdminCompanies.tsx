@@ -74,8 +74,8 @@ export default function AdminCompanies() {
         Add/Edit Employee form and used for import defaults and report scoping. Exactly one company is marked
         Primary at a time; it's the default for new employees and the scope reports fall back to.
       </p>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <form onSubmit={createCompany} className="bg-white border rounded-lg p-4 space-y-2 lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <form onSubmit={createCompany} className="bg-white border rounded-xl p-4 space-y-2 lg:col-span-1">
           <h2 className="font-medium mb-2">Add company</h2>
           <input
             placeholder="Company name"
@@ -96,7 +96,7 @@ export default function AdminCompanies() {
           </button>
         </form>
 
-        <div className="bg-white border rounded-lg lg:col-span-2 overflow-x-auto">
+        <div className="bg-white border rounded-xl lg:col-span-2 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left">
               <tr><th className="p-2">Name</th><th className="p-2">Code</th><th className="p-2">Employees</th><th className="p-2">Status</th><th className="p-2"></th></tr>
