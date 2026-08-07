@@ -1,0 +1,626 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Enums (Prisma+SQLite has no native enum type; stored as String, validated
+// in the Zod schemas / service layer. Kept as comments here for reference.)
+// Role: ADMIN | DOCTOR | DENTIST | NURSE
+// Sex: MALE | FEMALE
+// BmiCategory: UNDERWEIGHT | NORMAL | OVERWEIGHT | OBESE_I | OBESE_II
+// NoteType: DOCTOR | NURSE | DENTIST
+// VisitCategory: CONSULT | INJURY | ILLNESS | FOLLOW_UP | APE_REVIEW | FIT_TO_WORK | OTHER
+// Disposition: RETURN_TO_WORK | LIGHT_DUTY | SENT_HOME | REFERRED | OBSERVATION
+// NoteStatus: FINAL | VOIDED
+// DocumentCategory: LABORATORY | IMAGING | APE | DENTAL | MEDICAL_CERTIFICATE | CLEARANCE | VACCINATION | OTHER
+// FitnessClass: CLASS_A | CLASS_B | CLASS_C | CLASS_D | PENDING
+// FieldDataType: TEXT | NUMBER | DATE | SELECT | BOOLEAN
+// ImportType: EMPLOYEES | APE | MEDICATIONS | HISTORICAL_NOTES
+// ImportStatus: DRY_RUN | COMMITTED | FAILED
+// AuditAction: LOGIN | LOGIN_FAILED | LOGOUT | VIEW_RECORD | CREATE_NOTE | EDIT_NOTE | ADD_ADDENDUM |
+//              VOID_NOTE | UPLOAD_DOC | DOWNLOAD_DOC | ARCHIVE_DOC | CREATE_USER | UPDATE_USER |
+//              DEACTIVATE_USER | RESET_PASSWORD | IMPORT_RUN | BACKUP_RUN | CREATE_EMPLOYEE | UPDATE_EMPLOYEE |
+//              RECORD_VITALS | LOG_MEDICATION | ARCHIVE_EMPLOYEE | RESTORE_EMPLOYEE | CREATE_COMPANY |
+//              DELETE_EMPLOYEE | UPDATE_BRANDING | UPDATE_TOOTH_RECORD | CREATE_CERTIFICATE
+// ToothStatus: HEALTHY | MISSING | CARIES (a plain string, not a native SQL
+//              enum, specifically so more statuses — filled, crown, root
+//              canal, etc. — can be added later without a schema rewrite;
+//              validation lives in the Zod schema in routes/dental.ts)
+
+model User {
+  id                String   @id @default(uuid())
+  username          String   @unique
+  fullName          String
+  role              String
+  licenseNumber     String?
+  passwordHash      String
+  isActive          Boolean  @default(true)
+  mustChangePassword Boolean @default(true)
+  lastLoginAt       DateTime?
+  failedLoginCount  Int      @default(0)
+  lockedUntil       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  sessions          Session[]
+  clinicalNotes     ClinicalNote[]        @relation("NoteAuthor")
+  voidedNotes       ClinicalNote[]        @relation("NoteVoider")
+  addenda           NoteAddendum[]
+  medicationLogs    MedicationLog[]
+  documents         MedicalDocument[]
+  vitalsRecords     VitalsRecord[]
+  importBatches     ImportBatch[]
+  auditLogs         AuditLog[]
+  templatesCreated  APETemplate[]
+  noteRevisions     NoteRevision[]
+  toothRecords      ToothRecord[]
+  certificatesIssued MedicalCertificate[]
+  standaloneCertificatesIssued CertificateVerificationRecord[]
+
+  @@index([username])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  idleExpiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Employee {
+  id                       String   @id @default(uuid())
+  employeeCode             String   @unique
+  lastName                 String
+  firstName                String
+  middleName               String?
+  suffix                   String?
+  dateOfBirth              DateTime?
+  sex                      String?
+  civilStatus              String?
+  bloodType                String?
+  religion                 String?
+  department               String?
+  position                 String?
+  employmentStatus         String?
+  dateHired                DateTime?
+  mobileNumber             String?
+  address                  String?
+  emergencyContactName     String?
+  emergencyContactRelation String?
+  emergencyContactNumber   String?
+  photoPath                String?
+  photoThumbPath           String?
+  knownAllergies           String?
+  chronicConditions        String?
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  // The clinic serves multiple partner companies/agencies, admin-managed
+  // via the Company model (see below) — never a hardcoded name. Company
+  // transfers are handled by issuing a new employee code as a new record,
+  // not by editing this field, so only the current company is tracked.
+  companyId                String?
+  company                  Company? @relation(fields: [companyId], references: [id])
+
+  vitalsRecords     VitalsRecord[]
+  clinicalNotes     ClinicalNote[]
+  medicationLogs    MedicationLog[]
+  documents         MedicalDocument[]
+  apes              AnnualPhysicalExam[]
+  auditLogs         AuditLog[]
+  toothRecords      ToothRecord[]
+  drugTestResults   DrugTestResult[]
+  preEmploymentExams PreEmploymentExam[]
+  medicalCertificates MedicalCertificate[]
+
+  @@index([employeeCode])
+  @@index([lastName, firstName])
+  @@index([department])
+  @@index([companyId])
+}
+
+model Company {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  shortCode String?
+  // Exactly one company should have isPrimary=true at a time — used as the
+  // default for new employees and as the letterhead/branding scope for
+  // reports. SQLite has no portable declarative partial-unique constraint
+  // in Prisma's schema language, so "only one primary" is enforced at the
+  // application layer (see routes/companies.ts) rather than the DB layer.
+  isPrimary Boolean    @default(false)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  employees Employee[]
+
+  @@index([name])
+}
+
+model VitalsRecord {
+  id               String   @id @default(uuid())
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id])
+  recordedAt       DateTime @default(now())
+  recordedById     String
+  recordedBy       User     @relation(fields: [recordedById], references: [id])
+  heightCm         Float?
+  weightKg         Float?
+  bmi              Float?
+  bmiCategory      String?
+  systolic         Int?
+  diastolic        Int?
+  pulseRate        Int?
+  respiratoryRate  Int?
+  temperatureC     Float?
+  oxygenSaturation Int?
+  remarks          String?
+  createdAt        DateTime @default(now())
+
+  @@index([employeeId, recordedAt])
+}
+
+model ClinicalNote {
+  id             String   @id @default(uuid())
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id])
+  authorId       String
+  author         User     @relation("NoteAuthor", fields: [authorId], references: [id])
+  noteType       String
+  visitDateTime  DateTime @default(now())
+  visitCategory  String?
+  // Doctor's/Dentist's Notes use chiefComplaint, assessment, diagnosis,
+  // treatment, recommendation. Nurse's Notes use chiefComplaint, assessment,
+  // nursingDiagnosis, plan, intervention, evaluation. Both sets share this
+  // one table (noteType picks which fields the UI shows/requires) rather
+  // than per-type tables, consistent with how the rest of this model
+  // already covers all three note types generically.
+  chiefComplaint String?
+  assessment     String?
+  diagnosis      String?
+  treatment      String?
+  recommendation String?
+  nursingDiagnosis String?
+  plan           String?
+  intervention   String?
+  evaluation     String?
+  // Curated illness/condition category for reporting (department + age
+  // breakdowns), separate from the free-text diagnosis/nursingDiagnosis
+  // fields, which stay untouched. Auto-suggested via keyword matching at
+  // charting time (still overridable) or by the one-time historical
+  // backfill script — illnessCategoryNeedsReview is only ever set true by
+  // that backfill, since anything entered/confirmed through the note form
+  // was already seen by the charting clinician before submit.
+  illnessCategory String?
+  illnessCategoryNeedsReview Boolean @default(false)
+  disposition    String?
+  referredTo     String?
+  followUpDate   DateTime?
+  isWorkRelated  Boolean  @default(false)
+  status         String   @default("FINAL")
+  voidReason     String?
+  voidedById     String?
+  voidedBy       User?    @relation("NoteVoider", fields: [voidedById], references: [id])
+  voidedAt       DateTime?
+  sourceType     String   @default("MANUAL")
+  legacyAuthorName String?
+  editableUntil  DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  addenda   NoteAddendum[]
+  revisions NoteRevision[]
+  medicationLogs MedicationLog[]
+
+  @@index([employeeId, visitDateTime])
+  @@index([noteType])
+  @@index([authorId])
+}
+
+// Full before/after snapshot for every self-edit within the correction window.
+model NoteRevision {
+  id         String   @id @default(uuid())
+  noteId     String
+  note       ClinicalNote @relation(fields: [noteId], references: [id])
+  editedById String
+  editedBy   User     @relation(fields: [editedById], references: [id])
+  beforeJson String
+  afterJson  String
+  createdAt  DateTime @default(now())
+
+  @@index([noteId])
+}
+
+model NoteAddendum {
+  id        String   @id @default(uuid())
+  noteId    String
+  note      ClinicalNote @relation(fields: [noteId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([noteId])
+}
+
+model MedicationLog {
+  id                 String   @id @default(uuid())
+  employeeId         String
+  employee           Employee @relation(fields: [employeeId], references: [id])
+  noteId             String?
+  note               ClinicalNote? @relation(fields: [noteId], references: [id])
+  dispensedAt        DateTime @default(now())
+  dispensedById      String
+  dispensedBy        User     @relation(fields: [dispensedById], references: [id])
+  drugName           String
+  strength           String?
+  dosageForm         String?
+  route              String?
+  frequency          String?
+  quantityDispensed  String?
+  indication         String?
+  remarks            String?
+  isArchived         Boolean  @default(false)
+  archiveReason      String?
+  createdAt          DateTime @default(now())
+
+  @@index([employeeId, dispensedAt])
+}
+
+model MedicalDocument {
+  id               String   @id @default(uuid())
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id])
+  category         String
+  title            String
+  documentDate     DateTime?
+  filePath         String
+  originalFilename String
+  mimeType         String
+  fileSizeBytes    Int
+  uploadedById     String
+  uploadedBy       User     @relation(fields: [uploadedById], references: [id])
+  notes            String?
+  isArchived       Boolean  @default(false)
+  archiveReason    String?
+  createdAt        DateTime @default(now())
+
+  apes AnnualPhysicalExam[]
+
+  @@index([employeeId, category])
+}
+
+model AnnualPhysicalExam {
+  id                    String   @id @default(uuid())
+  employeeId            String
+  employee              Employee @relation(fields: [employeeId], references: [id])
+  examYear              Int
+  examDate              DateTime?
+  provider              String?
+  heightCm              Float?
+  weightKg              Float?
+  bmi                   Float?
+  bloodPressure         String?
+  visionOD              String?
+  visionOS              String?
+  hearing               String?
+  cbcResult             String?
+  urinalysisResult      String?
+  fecalysisResult       String?
+  chestXrayResult       String?
+  ecgResult             String?
+  drugTestResult        String?
+  otherFindings         String?
+  significantFindings   String?
+  recommendations       String?
+  fitnessClassification String?
+  // Standard catalog additions: quick initial hepatitis screen (e.g.
+  // HBsAg), the fuller follow-up panel (e.g. HBsAg/Anti-HBs/Anti-HBc), and
+  // a free-text physical exam findings/notes field — same TEXT-column
+  // pattern as the other Laboratory/Findings fields above.
+  hepatitisScreeningResult String?
+  hepaProfileResult        String?
+  physicalExamFindings     String?
+  sourceType            String   @default("MANUAL")
+  importBatchId         String?
+  importBatch           ImportBatch? @relation(fields: [importBatchId], references: [id])
+  documentId             String?
+  document                MedicalDocument? @relation(fields: [documentId], references: [id])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  fieldValues APEFieldValue[]
+
+  @@unique([employeeId, examYear])
+}
+
+// A single test event — append-only, no upsert/uniqueness dimension (an
+// employee may be tested any number of times), unlike AnnualPhysicalExam's
+// one-row-per-year model.
+model DrugTestResult {
+  id            String    @id @default(uuid())
+  employeeId    String
+  employee      Employee  @relation(fields: [employeeId], references: [id])
+  testDate      DateTime
+  result        String
+  specimenType  String?
+  labName       String?
+  remarks       String?
+  sourceType    String    @default("MANUAL")
+  importBatchId String?
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id])
+  createdAt     DateTime  @default(now())
+
+  @@index([employeeId, testDate])
+}
+
+// Pre-employment screening — distinct from AnnualPhysicalExam (periodic/
+// annual): append-only like DrugTestResult (an employee could conceivably
+// be screened again on rehire), not a single upsert-by-year record.
+model PreEmploymentExam {
+  id                     String    @id @default(uuid())
+  employeeId             String
+  employee               Employee  @relation(fields: [employeeId], references: [id])
+  examDate               DateTime?
+  provider               String?
+  heightCm               Float?
+  weightKg               Float?
+  bmi                    Float?
+  bloodPressure          String?
+  visionOD               String?
+  visionOS               String?
+  hearing                String?
+  cbcResult              String?
+  urinalysisResult       String?
+  fecalysisResult        String?
+  chestXrayResult        String?
+  ecgResult              String?
+  drugTestResult         String?
+  pregnancyTestResult    String?
+  medicalHistory         String?
+  physicalExamFindings   String?
+  otherFindings          String?
+  significantFindings    String?
+  recommendations        String?
+  fitnessClassification  String?
+  sourceType             String    @default("MANUAL")
+  importBatchId          String?
+  importBatch            ImportBatch? @relation(fields: [importBatchId], references: [id])
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([employeeId, examDate])
+}
+
+model APETemplate {
+  id          String   @id @default(uuid())
+  name        String
+  version     Int      @default(1)
+  importType  String   @default("APE")
+  isLocked    Boolean  @default(false)
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  fields APETemplateField[]
+
+  @@unique([name, version])
+}
+
+model APETemplateField {
+  id               String   @id @default(uuid())
+  templateId       String
+  template         APETemplate @relation(fields: [templateId], references: [id])
+  key              String
+  label            String
+  dataType         String
+  optionsJson      String?
+  unit             String?
+  isRequired       Boolean  @default(false)
+  section          String?
+  displayOrder     Int      @default(0)
+  mapsToCoreColumn String?
+
+  @@index([templateId])
+}
+
+model APEFieldValue {
+  id              String   @id @default(uuid())
+  apeId           String
+  ape             AnnualPhysicalExam @relation(fields: [apeId], references: [id])
+  fieldKey        String
+  templateVersion Int
+  valueText       String?
+  valueNumber     Float?
+  valueDate       DateTime?
+  valueBool       Boolean?
+
+  @@index([apeId, fieldKey])
+}
+
+model ImportBatch {
+  id             String   @id @default(uuid())
+  filename       String
+  storedPath     String?
+  importType     String
+  importedById   String
+  importedBy     User     @relation(fields: [importedById], references: [id])
+  startedAt      DateTime @default(now())
+  finishedAt     DateTime?
+  status         String   @default("DRY_RUN")
+  totalRows      Int      @default(0)
+  createdCount   Int      @default(0)
+  updatedCount   Int      @default(0)
+  errorCount     Int      @default(0)
+  errorLogJson   String?
+  templateId     String?
+  templateVersion Int?
+
+  apes AnnualPhysicalExam[]
+  drugTestResults DrugTestResult[]
+  preEmploymentExams PreEmploymentExam[]
+
+  @@index([importType])
+}
+
+// One row per tooth per employee (not one row per exam/visit) — the chart
+// always shows current status; history of who-changed-what lives in the
+// audit log, not as separate ToothRecord rows.
+model ToothRecord {
+  id           String   @id @default(uuid())
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+  // Universal Numbering System (1-32). Kept as a single Int column with no
+  // numbering-scheme logic baked into the rest of the app, so switching to
+  // FDI two-digit notation later is a client-side relabeling exercise, not
+  // a schema change.
+  toothNumber  Int
+  status       String   @default("HEALTHY")
+  notes        String?
+  updatedById  String
+  updatedBy    User     @relation(fields: [updatedById], references: [id])
+  updatedAt    DateTime @updatedAt
+
+  @@unique([employeeId, toothNumber])
+  @@index([employeeId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entityType  String?
+  entityId    String?
+  employeeId  String?
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+  ipAddress   String?
+  userAgent   String?
+  detailsJson String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([employeeId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Singleton (id is always the literal string "singleton") — one branding
+// config for the whole clinic, editable from Admin > Settings > Branding.
+// Colors are hex strings (e.g. "#1F3B57"); null fields fall back to the
+// built-in navy/teal defaults and inline logo mark on the client.
+// appName/appTagline are the software's own displayed name/subtitle (sidebar
+// header, login page, browser tab, and — via getAppName() — every PDF/Word
+// export, including the medical certificate letterhead) for white-labeling.
+// address/contactNumber are letterhead-only fields, not shown elsewhere in
+// the app UI — added specifically for the medical certificate header.
+// certificatePrefix is the short code used in the certificate control number
+// (e.g. "YPI" in "YPI-2026-000142") — admin-editable, but auto-suggested from
+// appName the first time it's set (see certificatePrefix.ts on both client
+// and server). Null means "not yet configured"; callers must derive a
+// fallback from appName rather than assuming a hardcoded default, since the
+// prefix is no longer a fixed constant.
+model ClinicSettings {
+  id                String   @id @default("singleton")
+  appName           String?
+  appTagline        String?
+  address           String?
+  contactNumber     String?
+  certificatePrefix String?
+  logoPath          String?
+  backgroundPath    String?
+  primaryColor      String?
+  accentColor       String?
+  updatedAt         DateTime @updatedAt
+}
+
+// One shared, atomically-incremented counter per calendar year, backing the
+// sequential control number printed on every medical certificate
+// (<clinic prefix>-<year>-<counter, zero-padded>) — resets each year rather
+// than running as one global monotonic counter forever, since the year is
+// already part of the printed number and a per-year reset is simpler to
+// reason about than trying to keep a single all-time counter consistent.
+// Both certificate types (employee-linked and standalone) draw from the SAME
+// counter/year row, inside the same transaction as creating their own
+// record, so control numbers stay globally unique and gapless-in-order
+// across both — see services/certificateNumbering.ts. The counter itself is
+// intentionally NOT scoped by prefix: if the admin renames the clinic
+// mid-year, the sequence keeps incrementing under the new prefix rather than
+// restarting, since nothing in the spec ties uniqueness to the prefix.
+model CertificateCounter {
+  year  Int @id
+  count Int @default(0)
+}
+
+// A medical certificate issued for an actual employee — the full record,
+// saved the same way any other clinical document is: linked to the
+// employee, visible in their profile/history, part of the normal audit
+// trail. This IS the verification source for employee certificates (see
+// routes/certificates.ts's /verify endpoint) — there is no separate index;
+// the saved record itself is what makes the control number checkable.
+// Deliberately a SEPARATE model from CertificateVerificationRecord below,
+// not one shared table with nullable content columns for the standalone
+// case — the whole point of the standalone path is that no content is ever
+// persisted for it, and giving it its own table with no content columns at
+// all makes that a schema-level fact, not just an application convention
+// someone could accidentally violate later.
+model MedicalCertificate {
+  id            String   @id @default(uuid())
+  controlNumber String   @unique
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id])
+  // Name/address are snapshotted at issue time (auto-filled from the
+  // employee record but editable in the form) rather than always read live
+  // off Employee — a later name/address correction on the employee record
+  // must not silently rewrite the text of a certificate already handed out.
+  name          String
+  address       String
+  examDate      DateTime
+  complaints    String
+  diagnosis     String
+  remarks       String
+  doctorId      String
+  doctor        User     @relation(fields: [doctorId], references: [id])
+  // "Company Physician" / "Dentist" — snapshotted from the issuing user's
+  // role at issue time, for the same reason name/address are snapshotted.
+  doctorTitle   String
+  pdfPath       String
+  issuedAt      DateTime @default(now())
+
+  @@index([employeeId])
+}
+
+// The ENTIRE record for a standalone (non-employee) certificate — control
+// number, when, and who issued it. No name, no address, no diagnosis, no
+// complaint text, no remarks: the spec for this path is that nothing about
+// the certificate's actual content is ever stored anywhere, only enough to
+// confirm a control number is genuine. Never joined to Employee, never
+// referenced from any employee-scoped query — this table has no
+// relationship to employee data at all.
+model CertificateVerificationRecord {
+  id            String   @id @default(uuid())
+  controlNumber String   @unique
+  doctorId      String
+  doctor        User     @relation(fields: [doctorId], references: [id])
+  issuedAt      DateTime @default(now())
+}

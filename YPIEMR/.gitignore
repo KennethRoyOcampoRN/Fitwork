@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.cache/
+*.log
+.env
+.env.local
+server/.env
+data/
+storage/
+server/certs/
+client/dist/
+.DS_Store
+*.tsbuildinfo
