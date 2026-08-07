@@ -125,7 +125,7 @@ export default function AdminImport() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white form-panel border rounded-lg p-4">
+      <div className="bg-white border rounded-lg p-4">
         <h2 className="font-medium mb-2">1. Download a template workbook</h2>
         <p className="text-xs text-gray-500 mb-2">For APE templates, use the APE Templates tab instead — this generates the fixed-column workbook for Employees / Medications / Historical Notes.</p>
         <div className="flex gap-2 items-center">
@@ -136,7 +136,7 @@ export default function AdminImport() {
         </div>
       </div>
 
-      <div className="bg-white form-panel border rounded-lg p-4">
+      <div className="bg-white border rounded-lg p-4">
         <h2 className="font-medium mb-2">2. Upload the filled-in workbook (any import type — auto-identified from its stamp)</h2>
         <p className="text-xs text-gray-500 mb-2">
           This includes filled-in <strong>APE</strong> workbooks — download those from the{" "}

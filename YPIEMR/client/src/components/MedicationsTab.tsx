@@ -59,7 +59,7 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 space-y-2 lg:col-span-1">
+      <form onSubmit={submit} className="bg-white border rounded-lg p-4 space-y-2 lg:col-span-1">
         <h2 className="font-medium mb-2">Log medication dispensed</h2>
         <input placeholder="Drug name" value={form.drugName} onChange={(e) => setForm({ ...form, drugName: e.target.value })} className="w-full border rounded px-2 py-1 text-sm" required />
         <div className="grid grid-cols-2 gap-2">

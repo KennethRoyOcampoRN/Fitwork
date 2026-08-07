@@ -56,7 +56,7 @@ export default function AdminReports() {
         suitable for physical/official records. Medications are always their own standalone section — never bundled
         into a note entry.
       </p>
-      <div className="bg-white form-panel border rounded-lg p-4 max-w-xl space-y-3">
+      <div className="bg-white border rounded-lg p-4 max-w-xl space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">From</label>

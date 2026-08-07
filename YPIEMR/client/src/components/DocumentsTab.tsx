@@ -162,7 +162,7 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <form onSubmit={submit} className="bg-white form-panel rounded-lg p-4 w-full max-w-md space-y-2">
+      <form onSubmit={submit} className="bg-white rounded-lg p-4 w-full max-w-md space-y-2">
         <div className="flex justify-between items-center mb-1">
           <h2 className="font-semibold">Upload document</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>

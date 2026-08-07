@@ -53,7 +53,7 @@ export default function NoteLedger() {
         <button onClick={exportXlsx} className="bg-clinic-600 text-white rounded px-3 py-1.5 text-sm">Export to Excel</button>
       </div>
 
-      <div className="bg-white form-panel border rounded-lg p-3 mb-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-sm">
+      <div className="bg-white border rounded-lg p-3 mb-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-sm">
         <select value={filters.noteType} onChange={(e) => setFilters({ ...filters, noteType: e.target.value })} className="border rounded px-2 py-1">
           <option value="">All types</option>
           {NOTE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}

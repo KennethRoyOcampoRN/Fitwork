@@ -96,7 +96,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex bg-app-gradient">
       <aside
-        className={`${collapsed ? "w-16" : "w-60"} shrink-0 bg-app-gradient flex flex-col h-screen sticky top-0 transition-[width] duration-150`}
+        className={`${collapsed ? "w-16" : "w-60"} shrink-0 bg-white flex flex-col h-screen sticky top-0 transition-[width] duration-150`}
       >
         <div className={`flex items-center gap-2 h-20 border-b border-white/10 shrink-0 ${collapsed ? "justify-center px-2" : "px-4"}`}>
           {collapsed ? (
@@ -152,7 +152,7 @@ export default function Layout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="bg-white form-panel border-b border-gray-200 px-4 py-2.5">
+        <div className="bg-white border-b border-gray-200 px-4 py-2.5">
           <form onSubmit={onSearchSubmit} className="max-w-md relative">
             <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input

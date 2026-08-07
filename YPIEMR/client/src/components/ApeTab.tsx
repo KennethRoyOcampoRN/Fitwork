@@ -94,7 +94,7 @@ export default function ApeTab({ employeeId, focusId }: { employeeId: string; fo
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
           <input placeholder="Exam year" type="number" value={form.examYear} onChange={(e) => setForm({ ...form, examYear: e.target.value })} className="border rounded px-2 py-1" required />
           <input placeholder="Exam date" type="date" value={form.examDate} onChange={(e) => setForm({ ...form, examDate: e.target.value })} className="border rounded px-2 py-1" />
           <input placeholder="Provider" value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="border rounded px-2 py-1" />

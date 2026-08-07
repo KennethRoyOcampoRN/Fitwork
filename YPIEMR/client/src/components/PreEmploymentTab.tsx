@@ -93,7 +93,7 @@ export default function PreEmploymentTab({ employeeId, focusId }: { employeeId: 
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
           <input placeholder="Exam date" type="date" value={form.examDate} onChange={(e) => setForm({ ...form, examDate: e.target.value })} className="border rounded px-2 py-1" />
           <input placeholder="Provider" value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="border rounded px-2 py-1" />
           <input placeholder="Height (cm)" type="number" value={form.heightCm} onChange={(e) => setForm({ ...form, heightCm: e.target.value })} className="border rounded px-2 py-1" />

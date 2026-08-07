@@ -30,7 +30,7 @@ export default function ChangePassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-app-gradient">
-      <div className="w-full max-w-sm bg-white form-panel rounded-lg shadow p-8">
+      <div className="w-full max-w-sm bg-white rounded-lg shadow p-8">
         <h1 className="text-xl font-bold mb-1">Change your password</h1>
         <p className="text-sm text-gray-500 mb-6">You must set a new password before continuing.</p>
         <form onSubmit={onSubmit} className="space-y-4">

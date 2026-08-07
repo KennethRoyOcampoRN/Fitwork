@@ -126,7 +126,7 @@ export default function PhotoCaptureModal({ employeeId, onClose, onSaved, onCapt
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white form-panel rounded-lg p-4 w-full max-w-md">
+      <div className="bg-white rounded-lg p-4 w-full max-w-md">
         <div className="flex justify-between items-center mb-3">
           <h2 className="font-semibold">{onCapture ? "Add employee photo" : "Update employee photo"}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>

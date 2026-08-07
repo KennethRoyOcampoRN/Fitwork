@@ -128,7 +128,7 @@ export default function NewNote() {
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="bg-white form-panel border rounded-lg p-4 space-y-3">
+      <form onSubmit={onSubmit} className="bg-white border rounded-lg p-4 space-y-3">
         <div>
           <label className="block text-sm font-medium mb-1">Visit category</label>
           <select value={form.visitCategory} onChange={(e) => setForm({ ...form, visitCategory: e.target.value })} className="w-full border rounded px-2 py-1 text-sm">

@@ -478,7 +478,7 @@ function VitalsTab({ employeeId, onRecorded }: { employeeId: string; onRecorded:
         <StatTile icon={IconDroplet} label="Readings on file" value={combined.length} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 space-y-2 md:col-span-1">
+      <form onSubmit={submit} className="bg-white border rounded-lg p-4 space-y-2 md:col-span-1">
         <h2 className="font-medium mb-2">Record vitals</h2>
         {(["heightCm", "weightKg", "systolic", "diastolic", "pulseRate"] as const).map((f) => (
           <input

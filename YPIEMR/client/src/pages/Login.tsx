@@ -54,12 +54,12 @@ export default function Login() {
         </div>
 
         <div
-          className="bg-white form-panel rounded-xl shadow-xl overflow-hidden animate-fade-in-up"
+          className="bg-white rounded-xl shadow-xl overflow-hidden animate-fade-in-up"
           style={{ animationDelay: "150ms" }}
         >
           <div className="h-1.5 bg-clinic-600" />
           <div className="p-8">
-            <h2 className="text-lg font-semibold text-clinic-800 mb-4">Sign in</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">Sign in</h2>
 
             {expired && (
               <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-4">

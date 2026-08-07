@@ -75,7 +75,7 @@ export default function AdminCompanies() {
         Primary at a time; it's the default for new employees and the scope reports fall back to.
       </p>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <form onSubmit={createCompany} className="bg-white form-panel border rounded-lg p-4 space-y-2 lg:col-span-1">
+        <form onSubmit={createCompany} className="bg-white border rounded-lg p-4 space-y-2 lg:col-span-1">
           <h2 className="font-medium mb-2">Add company</h2>
           <input
             placeholder="Company name"
