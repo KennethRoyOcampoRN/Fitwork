@@ -53,7 +53,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-clinic-800 mb-1">Welcome, {user?.fullName}</h1>
+      <h1 className="text-2xl font-semibold text-white mb-1">Welcome, {user?.fullName}</h1>
       <p className="text-sm text-gray-500 mb-6">
         Type an employee code or name in the search bar above, or press <kbd className="border rounded px-1.5 py-0.5 bg-white text-xs">/</kbd> to jump there.
       </p>
@@ -69,10 +69,10 @@ export default function Dashboard() {
                 isOwn ? "border-clinic-300 ring-1 ring-clinic-100" : "border-gray-200"
               }`}
             >
-              <div className="w-11 h-11 rounded-lg bg-clinic-50 text-clinic-600 flex items-center justify-center mb-3 group-hover:bg-clinic-100 transition-colors">
+              <div className="w-11 h-11 rounded-lg bg-clinic-50 brand-chip brand-chip-hover text-clinic-400 flex items-center justify-center mb-3 transition-colors">
                 <Icon className="w-6 h-6" />
               </div>
-              <div className="font-semibold text-clinic-800">{card.label}</div>
+              <div className="font-semibold text-white">{card.label}</div>
               <div className="text-sm text-gray-500 mt-0.5">{card.description}</div>
             </button>
           );

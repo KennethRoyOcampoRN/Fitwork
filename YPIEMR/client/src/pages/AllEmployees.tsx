@@ -42,7 +42,7 @@ export default function AllEmployees() {
             {employees.map((e) => (
               <tr key={e.id}>
                 <td className="p-2">
-                  <Link to={`/employees/${e.id}`} className="text-clinic-700 underline">
+                  <Link to={`/employees/${e.id}`} className="text-clinic-300 underline">
                     {e.lastName}, {e.firstName}
                   </Link>
                   {(e.knownAllergies || e.chronicConditions) && (

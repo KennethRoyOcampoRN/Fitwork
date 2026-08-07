@@ -75,7 +75,7 @@ export default function AdminCompanies() {
         Primary at a time; it's the default for new employees and the scope reports fall back to.
       </p>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <form onSubmit={createCompany} className="bg-white border rounded-lg p-4 space-y-2 lg:col-span-1">
+        <form onSubmit={createCompany} className="bg-white form-panel border rounded-lg p-4 space-y-2 lg:col-span-1">
           <h2 className="font-medium mb-2">Add company</h2>
           <input
             placeholder="Company name"
@@ -105,7 +105,7 @@ export default function AdminCompanies() {
               {companies.length === 0 && <tr><td colSpan={5} className="p-4 text-center text-gray-400">No companies added yet.</td></tr>}
               {companies.map((c) => (
                 <tr key={c.id}>
-                  <td className="p-2">{c.name}{c.isPrimary && <span className="ml-2 text-xs bg-clinic-100 text-clinic-700 px-1.5 py-0.5 rounded">Primary</span>}</td>
+                  <td className="p-2">{c.name}{c.isPrimary && <span className="ml-2 text-xs bg-clinic-100 brand-chip text-clinic-100 px-1.5 py-0.5 rounded">Primary</span>}</td>
                   <td className="p-2">{c.shortCode || "—"}</td>
                   <td className="p-2">{c.employeeCount}</td>
                   <td className="p-2">{c.isActive ? "Active" : "Inactive"}</td>
@@ -114,7 +114,7 @@ export default function AdminCompanies() {
                       <button
                         onClick={() => setPrimary(c.id)}
                         disabled={rowBusyId === c.id || !c.isActive}
-                        className="text-xs text-clinic-700 underline disabled:opacity-50 disabled:no-underline"
+                        className="text-xs text-clinic-300 underline disabled:opacity-50 disabled:no-underline"
                         title={!c.isActive ? "An inactive company cannot be made primary" : undefined}
                       >
                         Make primary

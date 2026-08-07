@@ -105,7 +105,7 @@ export default function CertificateTab({
       </div>
 
       {showForm && canIssue && (
-        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 space-y-2 text-sm">
+        <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 mb-4 space-y-2 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input placeholder="Patient name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-2 py-1" required />
             <input placeholder="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="border rounded px-2 py-1" required />

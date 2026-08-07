@@ -43,7 +43,7 @@ function DepartmentSelect({ value, onChange, departments }: { value: string; onC
 
 function ReportCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border rounded-lg p-4">
+    <div className="bg-white form-panel border rounded-lg p-4">
       <h2 className="font-medium mb-1">{title}</h2>
       <p className="text-xs text-gray-500 mb-3">{description}</p>
       {children}
@@ -392,7 +392,7 @@ function CustomReportBuilderSection({ departments, companies }: { departments: s
             className="border rounded px-2 py-1 text-sm w-full max-w-sm"
           />
           {hits.length > 0 && (
-            <div className="border rounded mt-1 max-w-sm bg-white shadow-sm">
+            <div className="border rounded mt-1 max-w-sm bg-white form-panel shadow-sm">
               {hits.map((h) => (
                 <button key={h.id} onClick={() => addEmployee(h)} className="block w-full text-left px-2 py-1 text-sm hover:bg-gray-50">
                   {h.lastName}, {h.firstName} <span className="text-gray-400">#{h.employeeCode}</span>
@@ -403,9 +403,9 @@ function CustomReportBuilderSection({ departments, companies }: { departments: s
           {selected.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {selected.map((s) => (
-                <span key={s.id} className="bg-clinic-50 text-clinic-800 text-xs rounded-full px-2 py-1 flex items-center gap-1">
+                <span key={s.id} className="bg-clinic-50 brand-chip text-clinic-100 text-xs rounded-full px-2 py-1 flex items-center gap-1">
                   {s.lastName}, {s.firstName}
-                  <button onClick={() => removeEmployee(s.id)} className="text-clinic-500 hover:text-clinic-800">×</button>
+                  <button onClick={() => removeEmployee(s.id)} className="text-clinic-500 hover:text-white">×</button>
                 </span>
               ))}
             </div>

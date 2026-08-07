@@ -22,7 +22,7 @@ export const settingsRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: config.maxUploadBytes } });
 
 export const DEFAULT_PRIMARY_COLOR = "#D2571A";
-export const DEFAULT_ACCENT_COLOR = "#08514E";
+export const DEFAULT_ACCENT_COLOR = "#E4622B";
 export { DEFAULT_APP_NAME };
 export const DEFAULT_APP_TAGLINE = "by Clinicore — Employee Health Records System";
 

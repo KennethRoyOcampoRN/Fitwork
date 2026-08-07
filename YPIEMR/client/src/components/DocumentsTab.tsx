@@ -84,8 +84,8 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
             <div className="text-xs text-gray-400">{d.documentDate ? new Date(d.documentDate).toLocaleDateString() : new Date(d.createdAt).toLocaleDateString()} · {d.uploadedBy.fullName}</div>
             {d.isArchived && <div className="text-xs text-red-600 mt-1">Reason: {d.archiveReason}</div>}
             <div className="flex gap-3 mt-2">
-              <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-700 underline">Preview</button>
-              <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-700 underline">Download</a>
+              <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-300 underline">Preview</button>
+              <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
               {!d.isArchived && <button onClick={() => archive(d)} className="text-xs text-red-600 underline">Archive</button>}
               {user?.role === "ADMIN" && (
                 <PermanentDeleteButton
@@ -162,7 +162,7 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <form onSubmit={submit} className="bg-white rounded-lg p-4 w-full max-w-md space-y-2">
+      <form onSubmit={submit} className="bg-white form-panel rounded-lg p-4 w-full max-w-md space-y-2">
         <div className="flex justify-between items-center mb-1">
           <h2 className="font-semibold">Upload document</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>

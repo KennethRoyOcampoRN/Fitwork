@@ -54,14 +54,14 @@ export default function StandaloneCertificate() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-lg font-bold text-clinic-900 mb-1">Standalone Medical Certificate</h1>
+      <h1 className="text-lg font-bold text-white mb-1">Standalone Medical Certificate</h1>
       <p className="text-sm text-gray-500 mb-4">
         For a person with no employee record in this system (e.g. a walk-in or visitor). Only a minimal verification
         record — control number, issue date, and issuing doctor — is kept; none of the content entered below is
         saved anywhere.
       </p>
 
-      <form onSubmit={submit} className="bg-white border rounded-lg p-4 space-y-2 text-sm">
+      <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 space-y-2 text-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input placeholder="Patient name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-2 py-1" required />
           <input placeholder="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="border rounded px-2 py-1" required />

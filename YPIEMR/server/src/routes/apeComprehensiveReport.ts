@@ -162,7 +162,11 @@ async function resolveChartBranding(): Promise<ChartBranding> {
   const settings = await prisma.clinicSettings.findUnique({ where: { id: "singleton" } });
   return {
     primaryColor: settings?.primaryColor || DEFAULT_CHART_BRANDING.primaryColor,
-    accentColor: settings?.accentColor || DEFAULT_CHART_BRANDING.accentColor,
+    // Deliberately not settings.accentColor: the UI accent is a single
+    // brand color, but a two-series chart needs its second color to stay
+    // visually distinct from the first regardless of what that brand color
+    // is, so this stays pinned to the original fixed teal.
+    accentColor: DEFAULT_CHART_BRANDING.accentColor,
   };
 }
 

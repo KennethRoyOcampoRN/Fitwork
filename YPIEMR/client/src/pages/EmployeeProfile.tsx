@@ -206,16 +206,16 @@ export default function EmployeeProfile() {
         <div className="flex flex-col sm:flex-row gap-5">
           <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:w-36 shrink-0">
             {canEditEmployee ? (
-              <button onClick={() => setShowPhotoModal(true)} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-clinic-100 overflow-hidden flex items-center justify-center shrink-0">
+              <button onClick={() => setShowPhotoModal(true)} className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-clinic-100 brand-chip overflow-hidden flex items-center justify-center shrink-0">
                 {employee.photoPath ? <img src={`/api/employees/${employee.id}/photo/full`} className="w-full h-full object-cover" /> : <IconUser className="w-10 h-10 sm:w-12 sm:h-12 text-clinic-400" />}
               </button>
             ) : (
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-clinic-100 overflow-hidden flex items-center justify-center shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-clinic-100 brand-chip overflow-hidden flex items-center justify-center shrink-0">
                 {employee.photoPath ? <img src={`/api/employees/${employee.id}/photo/full`} className="w-full h-full object-cover" /> : <IconUser className="w-10 h-10 sm:w-12 sm:h-12 text-clinic-400" />}
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="text-lg font-bold text-clinic-900 leading-tight">{employee.lastName}, {employee.firstName}</h1>
+              <h1 className="text-lg font-bold text-white leading-tight">{employee.lastName}, {employee.firstName}</h1>
               {employee.middleName && <div className="text-sm text-gray-500">{employee.middleName}</div>}
               <div className="text-gray-400 text-sm">#{employee.employeeCode}</div>
             </div>
@@ -261,7 +261,7 @@ export default function EmployeeProfile() {
             {canEditEmployee && (
               <button
                 onClick={() => navigate(`/employees/${employee.id}/edit`)}
-                className="inline-flex items-center gap-1.5 border border-clinic-300 text-clinic-700 hover:bg-clinic-50 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 border border-clinic-300 text-clinic-300 hover:bg-white/10 hover:text-white rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
               >
                 <IconEdit className="w-3.5 h-3.5" /> Edit
               </button>
@@ -317,7 +317,7 @@ export default function EmployeeProfile() {
                   key={key}
                   onClick={() => goToTab(key)}
                   className={`px-3.5 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                    tab === key ? "bg-clinic-600 text-white shadow-sm" : "text-gray-600 hover:bg-clinic-50 hover:text-clinic-700"
+                    tab === key ? "bg-clinic-600 text-white shadow-sm" : "text-gray-600 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   {label}
@@ -478,7 +478,7 @@ function VitalsTab({ employeeId, onRecorded }: { employeeId: string; onRecorded:
         <StatTile icon={IconDroplet} label="Readings on file" value={combined.length} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <form onSubmit={submit} className="bg-white border rounded-lg p-4 space-y-2 md:col-span-1">
+      <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 space-y-2 md:col-span-1">
         <h2 className="font-medium mb-2">Record vitals</h2>
         {(["heightCm", "weightKg", "systolic", "diastolic", "pulseRate"] as const).map((f) => (
           <input

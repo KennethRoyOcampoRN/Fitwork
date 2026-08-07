@@ -59,7 +59,7 @@ export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onCh
         </div>
         <div className="flex items-center gap-2">
           {isEditable && <EditCountdown editableUntil={note.editableUntil!} />}
-          {isEditable && <button onClick={() => setEditing((e) => !e)} className="text-xs text-clinic-700 underline">{editing ? "Cancel" : "Edit"}</button>}
+          {isEditable && <button onClick={() => setEditing((e) => !e)} className="text-xs text-clinic-300 underline">{editing ? "Cancel" : "Edit"}</button>}
           {canVoid && !editing && <button onClick={doVoid} className="text-xs text-red-600 underline">Void</button>}
           {user?.role === "ADMIN" && (
             <PermanentDeleteButton

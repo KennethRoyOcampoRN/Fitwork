@@ -125,7 +125,7 @@ export default function AdminImport() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border rounded-lg p-4">
+      <div className="bg-white form-panel border rounded-lg p-4">
         <h2 className="font-medium mb-2">1. Download a template workbook</h2>
         <p className="text-xs text-gray-500 mb-2">For APE templates, use the APE Templates tab instead — this generates the fixed-column workbook for Employees / Medications / Historical Notes.</p>
         <div className="flex gap-2 items-center">
@@ -136,11 +136,11 @@ export default function AdminImport() {
         </div>
       </div>
 
-      <div className="bg-white border rounded-lg p-4">
+      <div className="bg-white form-panel border rounded-lg p-4">
         <h2 className="font-medium mb-2">2. Upload the filled-in workbook (any import type — auto-identified from its stamp)</h2>
         <p className="text-xs text-gray-500 mb-2">
           This includes filled-in <strong>APE</strong> workbooks — download those from the{" "}
-          <Link to="/admin/templates" className="text-clinic-700 underline">APE Templates tab</Link>, then come back here to upload, dry-run, and commit them. The type selector above only affects step 1.
+          <Link to="/admin/templates" className="text-clinic-300 underline">APE Templates tab</Link>, then come back here to upload, dry-run, and commit them. The type selector above only affects step 1.
         </p>
         <div className="flex gap-2 items-center mb-3">
           <input type="file" accept=".xlsx" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-sm" />
@@ -228,7 +228,7 @@ export default function AdminImport() {
       {committed && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm">
           Import committed: {committed.createdCount} created, {committed.updatedCount} updated.
-          <a href={`/api/imports/${committed.id}/report`} className="text-clinic-700 underline ml-2">Download result report</a>
+          <a href={`/api/imports/${committed.id}/report`} className="text-clinic-300 underline ml-2">Download result report</a>
         </div>
       )}
 
@@ -263,7 +263,7 @@ export default function AdminImport() {
                   </td>
                   <td className="p-2">{b.createdCount}/{b.updatedCount}/{b.errorCount}</td>
                   <td className="p-2">{b.importedBy.fullName}</td>
-                  <td className="p-2">{b.status === "COMMITTED" && <a href={`/api/imports/${b.id}/report`} className="text-xs text-clinic-700 underline">Report</a>}</td>
+                  <td className="p-2">{b.status === "COMMITTED" && <a href={`/api/imports/${b.id}/report`} className="text-xs text-clinic-300 underline">Report</a>}</td>
                 </tr>
               );
             })}

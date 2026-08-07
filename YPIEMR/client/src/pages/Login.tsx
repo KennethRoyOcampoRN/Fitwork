@@ -35,7 +35,7 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-clinic-900 px-4 bg-cover bg-center"
+      className="min-h-screen flex items-center justify-center bg-app-gradient px-4 bg-cover bg-center"
       style={branding.backgroundUrl ? {
         backgroundImage: `linear-gradient(rgba(10, 20, 30, 0.55), rgba(10, 20, 30, 0.55)), url(${branding.backgroundUrl})`,
       } : undefined}
@@ -54,7 +54,7 @@ export default function Login() {
         </div>
 
         <div
-          className="bg-white rounded-xl shadow-xl overflow-hidden animate-fade-in-up"
+          className="bg-white form-panel rounded-xl shadow-xl overflow-hidden animate-fade-in-up"
           style={{ animationDelay: "150ms" }}
         >
           <div className="h-1.5 bg-clinic-600" />

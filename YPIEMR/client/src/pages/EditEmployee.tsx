@@ -75,7 +75,7 @@ export default function EditEmployee() {
   return (
     <div className="max-w-2xl">
       <h1 className="text-lg font-semibold mb-4">Edit employee — {form.lastName}, {form.firstName}</h1>
-      <form onSubmit={submit} className="bg-white border rounded-lg p-4 space-y-3">
+      <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 space-y-3">
         <div className="flex items-center gap-4 pb-3 border-b">
           <button
             type="button"

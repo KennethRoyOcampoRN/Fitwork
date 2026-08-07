@@ -55,7 +55,7 @@ export default function AdminUsers() {
     <div>
       <h1 className="text-lg font-semibold mb-4">User management</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <form onSubmit={createUser} className="bg-white border rounded-lg p-4 space-y-2 lg:col-span-1">
+        <form onSubmit={createUser} className="bg-white form-panel border rounded-lg p-4 space-y-2 lg:col-span-1">
           <h2 className="font-medium mb-2">Create account</h2>
           <input placeholder="Username" className="w-full border rounded px-2 py-1 text-sm" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
           <input placeholder="Full name" className="w-full border rounded px-2 py-1 text-sm" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required />
@@ -81,8 +81,8 @@ export default function AdminUsers() {
                   <td className="p-2">{u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "Never"}</td>
                   <td className="p-2">{u.isActive ? <span className="text-green-700">Active</span> : <span className="text-gray-400">Inactive</span>}</td>
                   <td className="p-2 space-x-2 whitespace-nowrap">
-                    <button onClick={() => toggleActive(u)} className="text-xs text-clinic-700 underline">{u.isActive ? "Deactivate" : "Reactivate"}</button>
-                    <button onClick={() => resetPassword(u)} className="text-xs text-clinic-700 underline">Reset password</button>
+                    <button onClick={() => toggleActive(u)} className="text-xs text-clinic-300 underline">{u.isActive ? "Deactivate" : "Reactivate"}</button>
+                    <button onClick={() => resetPassword(u)} className="text-xs text-clinic-300 underline">Reset password</button>
                   </td>
                 </tr>
               ))}

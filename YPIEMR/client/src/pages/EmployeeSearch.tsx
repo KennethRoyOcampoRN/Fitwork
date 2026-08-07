@@ -51,7 +51,7 @@ export default function EmployeeSearch() {
           <div className="p-4 text-sm text-gray-500">
             No matches found. {q && <>No employee with code or name matching "{q}" exists yet.{" "}</>}
             {canCreate && (
-              <button onClick={() => navigate(`/employees/new${q ? `?code=${encodeURIComponent(q)}` : ""}`)} className="text-clinic-700 underline">
+              <button onClick={() => navigate(`/employees/new${q ? `?code=${encodeURIComponent(q)}` : ""}`)} className="text-clinic-300 underline">
                 Create a new employee record
               </button>
             )}

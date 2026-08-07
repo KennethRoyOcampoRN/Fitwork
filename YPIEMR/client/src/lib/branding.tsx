@@ -59,7 +59,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     logoUrl: settings?.hasLogo ? `/api/settings/branding/logo?v=${version}` : null,
     backgroundUrl: settings?.hasBackground ? `/api/settings/branding/background?v=${version}` : null,
     primaryColor: settings?.primaryColor || "#D2571A",
-    accentColor: settings?.accentColor || "#08514E",
+    accentColor: settings?.accentColor || "#E4622B",
     appName: settings?.appName || "FitWork",
     appTagline: settings?.appTagline || "by Clinicore — Employee Health Records System",
     address: settings?.address ?? null,

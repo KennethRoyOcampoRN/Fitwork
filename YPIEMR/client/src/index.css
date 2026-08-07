@@ -3,15 +3,19 @@
 @tailwind utilities;
 
 /*
- * Default clinic brand colors (navy + teal). Admin > Settings > Branding
- * overrides --clinic-primary/--clinic-accent at runtime via inline styles
- * on :root (see lib/branding.tsx) — every other shade below is derived from
- * those two via color-mix(), so the whole palette re-themes live from just
- * the two picked colors, with no rebuild and no per-shade computation in JS.
+ * Default clinic brand colors. Admin > Settings > Branding overrides
+ * --clinic-primary/--clinic-accent at runtime via inline styles on :root
+ * (see lib/branding.tsx) — every other shade below is derived from those
+ * two via color-mix(), so the whole palette re-themes live from just the
+ * two picked colors, with no rebuild and no per-shade computation in JS.
+ * --clinic-primary also drives certificate/report letterhead colors
+ * server-side, so it's left as the original brand orange; the page-chrome
+ * dark charcoal-teal look below (--app-bg-gradient) is a separate, UI-only
+ * token instead of being layered onto --clinic-primary.
  */
 :root {
   --clinic-primary: #D2571A;
-  --clinic-accent: #08514E;
+  --clinic-accent: #E4622B;
   --clinic-50: color-mix(in srgb, var(--clinic-accent) 10%, white);
   --clinic-100: color-mix(in srgb, var(--clinic-accent) 20%, white);
   --clinic-200: color-mix(in srgb, var(--clinic-accent) 35%, white);
@@ -20,10 +24,82 @@
   --clinic-500: color-mix(in srgb, var(--clinic-accent) 88%, white);
   --clinic-700: color-mix(in srgb, var(--clinic-accent) 85%, black);
   --clinic-900: color-mix(in srgb, var(--clinic-primary) 80%, black);
+
+  /* Dark glassmorphism theme tokens. */
+  --app-bg-gradient: linear-gradient(160deg, #0a1a1d 0%, #123138 45%, #0d2b2e 100%);
+  --text-offwhite: #F2EEE8;
+  --glass-bg: rgba(18, 38, 42, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --form-panel-bg: rgba(250, 248, 245, 0.97);
 }
 
 body {
-  @apply bg-gray-50 text-gray-900;
+  background: var(--app-bg-gradient) fixed;
+  color: var(--text-offwhite);
+}
+
+.bg-app-gradient {
+  background: var(--app-bg-gradient);
+}
+
+/* Glass card surfaces — every plain `bg-white` panel across the app (list
+   rows, tables, tab bars, display cards) becomes dark translucent glass by
+   default. Plain `border`/`divide-y` (color: currentColor in Tailwind v3)
+   automatically pick up the new off-white text color, so no separate border
+   override is needed for those. */
+.bg-white {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.bg-gray-50 { background-color: rgba(255, 255, 255, 0.04); }
+.bg-gray-100 { background-color: rgba(255, 255, 255, 0.08); }
+.bg-gray-200 { background-color: rgba(255, 255, 255, 0.14); }
+
+.text-gray-900 { color: var(--text-offwhite); }
+.text-gray-800 { color: rgba(242, 238, 232, 0.9); }
+.text-gray-700 { color: rgba(242, 238, 232, 0.82); }
+.text-gray-600 { color: rgba(242, 238, 232, 0.68); }
+.text-gray-500 { color: rgba(242, 238, 232, 0.54); }
+.text-gray-400 { color: rgba(242, 238, 232, 0.42); }
+
+.border-gray-100 { border-color: rgba(255, 255, 255, 0.08); }
+.border-gray-200 { border-color: rgba(255, 255, 255, 0.12); }
+.border-gray-300 { border-color: rgba(255, 255, 255, 0.20); }
+
+/* Form/input panels stay light and near-opaque so charting data entry
+   remains easy to read, unlike the dark glass used everywhere else. Applied
+   alongside `bg-white` on the specific containers that hold <form>/<input>
+   fields; declared after the overrides above so it wins the cascade. */
+.form-panel {
+  background-color: var(--form-panel-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: #1f2937;
+}
+.form-panel .text-gray-900 { color: #111827; }
+.form-panel .text-gray-800 { color: #1f2937; }
+.form-panel .text-gray-700 { color: #374151; }
+.form-panel .text-gray-600 { color: #4b5563; }
+.form-panel .text-gray-500 { color: #6b7280; }
+.form-panel .text-gray-400 { color: #9ca3af; }
+.form-panel .bg-gray-50 { background-color: #f9fafb; }
+.form-panel .bg-gray-100 { background-color: #f3f4f6; }
+.form-panel .bg-gray-200 { background-color: #e5e7eb; }
+.form-panel .border-gray-100 { border-color: #f3f4f6; }
+.form-panel .border-gray-200 { border-color: #e5e7eb; }
+.form-panel .border-gray-300 { border-color: #d1d5db; }
+
+/* Small accent-tinted chips/badges (icon badges, selected-item tags) used
+   the palest clinic-50/100 tints as their background, which read as
+   near-white on light cards but flash as a stark bright block on the new
+   dark glass. `.brand-chip` swaps that for a translucent version of the
+   accent instead, keeping the same "soft accent surface" intent. */
+.brand-chip {
+  background-color: color-mix(in srgb, var(--clinic-accent) 22%, transparent);
+}
+.group:hover .brand-chip-hover {
+  background-color: color-mix(in srgb, var(--clinic-accent) 34%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

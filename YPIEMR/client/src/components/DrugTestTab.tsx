@@ -70,7 +70,7 @@ export default function DrugTestTab({ employeeId, focusId }: { employeeId: strin
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        <form onSubmit={submit} className="bg-white form-panel border rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
           <input placeholder="Test date" type="date" value={form.testDate} onChange={(e) => setForm({ ...form, testDate: e.target.value })} className="border rounded px-2 py-1" required />
           <select value={form.result} onChange={(e) => setForm({ ...form, result: e.target.value })} className="border rounded px-2 py-1" required>
             <option value="">Result</option>

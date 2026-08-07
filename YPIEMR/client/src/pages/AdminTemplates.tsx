@@ -65,8 +65,8 @@ export default function AdminTemplates() {
               <div className="text-xs text-gray-500">{t.fields.length} fields · created by {t.createdBy.fullName}</div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowBuilder(t)} className="text-xs text-clinic-700 underline">{t.isLocked ? "Edit (creates v" + (t.version + 1) + ")" : "Edit"}</button>
-              <button onClick={() => setGenerateFor(t)} className="text-xs text-clinic-700 underline">Generate workbook</button>
+              <button onClick={() => setShowBuilder(t)} className="text-xs text-clinic-300 underline">{t.isLocked ? "Edit (creates v" + (t.version + 1) + ")" : "Edit"}</button>
+              <button onClick={() => setGenerateFor(t)} className="text-xs text-clinic-300 underline">Generate workbook</button>
             </div>
           </div>
         ))}
@@ -138,7 +138,7 @@ function TemplateBuilder({ catalog, template, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-4 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white form-panel rounded-lg p-4 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-3">
           <h2 className="font-semibold">{isNew ? "New APE template" : `Edit ${template.name}`}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -226,7 +226,7 @@ function GenerateModal({ template, onClose }: { template: Template; onClose: () 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-4 w-full max-w-sm">
+      <div className="bg-white form-panel rounded-lg p-4 w-full max-w-sm">
         <h2 className="font-semibold mb-3">Generate workbook — {template.name}</h2>
         <div className="space-y-2 text-sm">
           <label className="block">Exam year

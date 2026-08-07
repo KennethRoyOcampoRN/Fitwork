@@ -141,7 +141,7 @@ function ToothEditModal({ employeeId, tooth, onClose, onSaved }: { employeeId: s
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <form onSubmit={save} className="bg-white rounded-lg p-4 w-full max-w-sm space-y-3">
+      <form onSubmit={save} className="bg-white form-panel rounded-lg p-4 w-full max-w-sm space-y-3">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold">Tooth #{tooth.toothNumber}</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>

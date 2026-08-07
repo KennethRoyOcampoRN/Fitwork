@@ -70,7 +70,7 @@ export default function CertificateVerification() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-lg font-bold text-clinic-900 mb-1">Verify Medical Certificate</h1>
+      <h1 className="text-lg font-bold text-white mb-1">Verify Medical Certificate</h1>
       <p className="text-sm text-gray-500 mb-4">
         Enter a certificate's control number (e.g. {exampleControlNumber}) to confirm it was issued by this clinic.
       </p>

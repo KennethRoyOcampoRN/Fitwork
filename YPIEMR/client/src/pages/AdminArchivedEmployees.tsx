@@ -73,14 +73,14 @@ export default function AdminArchivedEmployees() {
             {employees.map((e) => (
               <tr key={e.id}>
                 <td className="p-2">
-                  <Link to={`/employees/${e.id}`} className="text-clinic-700 underline">{e.lastName}, {e.firstName}</Link>
+                  <Link to={`/employees/${e.id}`} className="text-clinic-300 underline">{e.lastName}, {e.firstName}</Link>
                 </td>
                 <td className="p-2">{e.employeeCode}</td>
                 <td className="p-2">{e.department || "—"}</td>
                 <td className="p-2">{e.company?.name || "—"}</td>
                 <td className="p-2">{new Date(e.updatedAt).toLocaleString()}</td>
                 <td className="p-2 space-x-3 whitespace-nowrap">
-                  <button onClick={() => restore(e.id)} disabled={busyId === e.id} className="text-xs text-clinic-700 underline disabled:opacity-50">
+                  <button onClick={() => restore(e.id)} disabled={busyId === e.id} className="text-xs text-clinic-300 underline disabled:opacity-50">
                     {busyId === e.id ? "Restoring..." : "Restore"}
                   </button>
                   <button onClick={() => deletePermanently(e)} disabled={busyId === e.id} className="text-xs text-red-800 underline disabled:opacity-50">
