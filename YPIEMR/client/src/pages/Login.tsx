@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth, ApiError } from "../lib/auth";
 import { useBranding } from "../lib/branding";
-import { IconClinicLogo, IconSpinner } from "../components/icons";
+import { IconSpinner } from "../components/icons";
 
 export default function Login() {
   const { login } = useAuth();
@@ -47,7 +47,7 @@ export default function Login() {
               <img src={branding.logoUrl} alt={`${branding.appName} logo`} className="max-h-full max-w-full object-contain" />
             </div>
           ) : (
-            <IconClinicLogo className="w-14 h-14 mb-3" />
+            <img src="/logo-icon.png" alt="FitWork" className="w-14 h-14 mb-3 object-contain" />
           )}
           <h1 className="text-2xl font-semibold text-white tracking-wide">{branding.appName}</h1>
           <p className="text-sm text-clinic-200">{branding.appTagline}</p>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { useBranding } from "../lib/branding";
-import { IconClinicLogo, IconSearch, IconHome, IconListChecks, IconShield, IconChevronLeft, IconChevronRight, IconLogout, IconFileText, IconTag } from "./icons";
+import { IconSearch, IconHome, IconListChecks, IconShield, IconChevronLeft, IconChevronRight, IconLogout, IconFileText, IconTag } from "./icons";
 
 const COLLAPSE_BREAKPOINT_PX = 1024; // matches Tailwind's `lg` — small laptop widths and below
 const COLLAPSE_STORAGE_KEY = "fitwork-sidebar-collapsed";
@@ -103,13 +103,13 @@ export default function Layout() {
             // Collapsed = icon-only width — an arbitrary uploaded logo isn't
             // reliably croppable into a small icon, so this always falls
             // back to the default mark rather than distorting a custom logo.
-            <IconClinicLogo className="w-8 h-8 shrink-0" />
+            <img src="/logo-icon.png" alt="FitWork" className="w-8 h-8 shrink-0 object-contain" />
           ) : branding.logoUrl ? (
             <div className="h-12 w-28 flex items-center justify-center shrink-0">
               <img src={branding.logoUrl} alt={`${branding.appName} logo`} className="max-h-full max-w-full object-contain" />
             </div>
           ) : (
-            <IconClinicLogo className="w-8 h-8 shrink-0" />
+            <img src="/logo-icon.png" alt="FitWork" className="w-8 h-8 shrink-0 object-contain" />
           )}
           {!collapsed && <span className="font-semibold text-lg text-white tracking-wide truncate">{branding.appName}</span>}
         </div>

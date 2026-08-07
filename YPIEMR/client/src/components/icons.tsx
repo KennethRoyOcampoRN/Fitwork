@@ -60,33 +60,6 @@ export function IconShield({ className = base }: IconProps) {
   );
 }
 
-// The FITWORK mark: a shield (trust, protected records) with a pulse/ECG
-// trace running through it (clinical care) — two motifs the login page's
-// design brief called out, combined into one simple, two-tone glyph.
-// Colored via the admin-customizable --clinic-primary/--clinic-accent CSS
-// variables (not hardcoded hex) so this fallback mark re-themes live too,
-// same as every other new sidebar/tile component.
-export function IconClinicLogo({ className = "w-10 h-10" }: IconProps) {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" className={className}>
-      <path
-        d="M24 4c6 0 12 2 16 5v12c0 12-7 19.5-16 23-9-3.5-16-11-16-23V9c4-3 10-5 16-5Z"
-        fill="var(--clinic-primary)"
-        stroke="var(--clinic-900)"
-        strokeWidth={1}
-      />
-      <path
-        d="M11 25h5l3-7 4 13 4-17 3 11h6"
-        fill="none"
-        stroke="var(--clinic-300)"
-        strokeWidth={2.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function IconHome({ className = base }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
