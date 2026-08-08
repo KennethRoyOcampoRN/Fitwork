@@ -136,21 +136,20 @@ export default function Layout() {
         <div className={`border-t border-white/10 shrink-0 space-y-3 ${collapsed ? "p-2" : "p-3"}`}>
           {!collapsed && <LiveClock />}
 
-          <div className={`flex items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
+          <div className={`flex items-center ${collapsed ? "justify-center" : ""}`}>
             {collapsed ? (
               // Collapsed = icon-only width — an arbitrary uploaded logo isn't
               // reliably croppable into a small icon, so this always falls
               // back to the default mark rather than distorting a custom logo.
               <img src="/logo-icon.png" alt="FitWork" className="w-7 h-7 shrink-0 object-contain" />
             ) : branding.logoUrl ? (
-              <div className="h-8 w-24 flex items-center shrink-0">
+              <div className="h-8 w-32 flex items-center shrink-0">
                 <img src={branding.logoUrl} alt={`${branding.appName} logo`} className="max-h-full max-w-full object-contain" />
               </div>
             ) : (
-              <>
-                <img src="/logo-icon.png" alt="FitWork" className="w-6 h-6 shrink-0 object-contain" />
-                <span className="font-semibold text-sm text-white tracking-wide truncate">{branding.appName}</span>
-              </>
+              // Full icon+wordmark lockup (white text) rather than icon+text,
+              // since this sits on the dark glass sidebar, not a light card.
+              <img src="/logo-full-white.png" alt="FitWork" className="h-7 max-w-full object-contain object-left" />
             )}
           </div>
 
