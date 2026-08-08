@@ -76,6 +76,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const { collapsed, toggle } = useSidebarCollapsed();
   const [q, setQ] = useState("");
+  const hasClinicBranding = !!branding.logoUrl || branding.appName !== "FitWork";
 
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -136,20 +137,42 @@ export default function Layout() {
         <div className={`border-t border-white/10 shrink-0 space-y-3 ${collapsed ? "p-2" : "p-3"}`}>
           {!collapsed && <LiveClock />}
 
-          <div className={`flex items-center ${collapsed ? "justify-center" : ""}`}>
+          {/* Which clinic account is this — the org's own name/logo from
+              Admin > Branding, distinct from the FitWork product attribution
+              below it. Only shown once there's something clinic-specific to
+              show (a custom name away from the "FitWork" default, and/or an
+              uploaded logo); otherwise it'd just repeat "FitWork" twice. */}
+          {hasClinicBranding && (
+            <div className={`flex items-center gap-2 min-w-0 ${collapsed ? "justify-center" : ""}`}>
+              {branding.logoUrl && (
+                <img
+                  src={branding.logoUrl}
+                  alt={`${branding.appName} logo`}
+                  className={collapsed ? "w-7 h-7 shrink-0 object-contain" : "h-7 max-w-[88px] object-contain shrink-0"}
+                />
+              )}
+              {!collapsed && (!branding.logoUrl || branding.appName !== "FitWork") && (
+                <span className="text-sm font-medium text-white truncate" title={branding.appName}>{branding.appName}</span>
+              )}
+            </div>
+          )}
+
+          <div className={collapsed ? "flex justify-center" : ""}>
+            {!collapsed && hasClinicBranding && (
+              <div className="text-[10px] uppercase tracking-wide text-clinic-300 mb-1">Powered by</div>
+            )}
             {collapsed ? (
               // Collapsed = icon-only width — an arbitrary uploaded logo isn't
               // reliably croppable into a small icon, so this always falls
               // back to the default mark rather than distorting a custom logo.
               <img src="/logo-icon.png" alt="FitWork" className="w-7 h-7 shrink-0 object-contain" />
-            ) : branding.logoUrl ? (
-              <div className="h-8 w-32 flex items-center shrink-0">
-                <img src={branding.logoUrl} alt={`${branding.appName} logo`} className="max-h-full max-w-full object-contain" />
-              </div>
             ) : (
-              // Full icon+wordmark lockup (white text) rather than icon+text,
-              // since this sits on the dark glass sidebar, not a light card.
-              <img src="/logo-full-white.png" alt="FitWork" className="h-7 max-w-full object-contain object-left" />
+              // The actual source FitWork lockup (client/public/logo-full-dark-bg.png,
+              // derived from YPIEMR/Fitwork Logo.png — see git history/commit
+              // message for the exact recolor, not a redrawn approximation)
+              // — full icon + wordmark + tagline + "By: Clinicore" line, kept
+              // at its original alignment.
+              <img src="/logo-full-dark-bg.png" alt="FitWork — Smarter Workplace Healthcare, by Clinicore" className="h-9 max-w-full object-contain object-left" />
             )}
           </div>
 
