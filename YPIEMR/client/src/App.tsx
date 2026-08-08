@@ -18,6 +18,7 @@ import AdminImport from "./pages/AdminImport";
 import AdminAudit from "./pages/AdminAudit";
 import AdminBackup from "./pages/AdminBackup";
 import AdminCompanies from "./pages/AdminCompanies";
+import AdminTestTypes from "./pages/AdminTestTypes";
 import AdminArchivedEmployees from "./pages/AdminArchivedEmployees";
 import AdminReports from "./pages/AdminReports";
 import AdminSettingsLayout from "./pages/AdminSettingsLayout";
@@ -89,6 +90,7 @@ export default function App() {
               <Route index element={<Navigate to="users" replace />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="companies" element={<AdminCompanies />} />
+              <Route path="test-types" element={<AdminTestTypes />} />
               <Route path="templates" element={<AdminTemplates />} />
               <Route path="import" element={<AdminImport />} />
               <Route path="archived" element={<AdminArchivedEmployees />} />

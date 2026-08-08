@@ -64,6 +64,71 @@ function DownloadButtons({ busy, onWord, onExcel }: { busy: boolean; onWord: () 
   );
 }
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+// Shared shape for the four month/year-filterable CSV reports (Illness by
+// month, Illness by department, Medications by department, Lab/diagnostic
+// tests by department) — a single generic section rather than four
+// near-identical copies, since they only differ in endpoint/title/
+// description. Unlike the Word/Excel reports above, these are a single
+// "Download CSV" button, matching routes/reportsCsv.ts's plain text/csv
+// export (same convention as the Audit Log's CSV export) rather than the
+// heavier docx/xlsx report builders.
+function MonthYearCsvReportSection({ endpoint, filenamePrefix, title, description, departments }: {
+  endpoint: string; filenamePrefix: string; title: string; description: string; departments: string[];
+}) {
+  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [month, setMonth] = useState(""); // "" = whole year
+  const [department, setDepartment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function buildParams(): URLSearchParams {
+    const params = new URLSearchParams({ year });
+    if (month) params.set("month", month);
+    if (department) params.set("department", department);
+    return params;
+  }
+
+  async function download() {
+    setBusy(true);
+    setError(null);
+    const period = month ? `${year}-${month.padStart(2, "0")}` : year;
+    const err = await downloadFile(`/api/reports/${endpoint}/export.csv?${buildParams()}`, `${filenamePrefix}-${period}.csv`);
+    setError(err);
+    setBusy(false);
+  }
+
+  return (
+    <ReportCard title={title} description={description}>
+      <div className="flex flex-wrap gap-2 items-end mb-3">
+        <div>
+          <label className="block text-xs font-medium mb-1">Year</label>
+          <input type="number" value={year} onChange={(e) => setYear(e.target.value)} className="border rounded px-2 py-1 text-sm w-24" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1">Month</label>
+          <select value={month} onChange={(e) => setMonth(e.target.value)} className="border rounded px-2 py-1 text-sm">
+            <option value="">Whole year</option>
+            {MONTHS.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1">Department</label>
+          <DepartmentSelect value={department} onChange={setDepartment} departments={departments} />
+        </div>
+      </div>
+      <button onClick={download} disabled={busy} className="bg-clinic-600 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
+        {busy ? "Preparing..." : "Download CSV"}
+      </button>
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+    </ReportCard>
+  );
+}
+
 interface ApeDentalSectionProps {
   departments: string[];
   companies: ReturnType<typeof useCompanies>;
@@ -463,6 +528,26 @@ export default function Reports() {
       <IllnessByDepartmentSection departments={departments} companies={companies} />
       <IllnessByAgeSection departments={departments} companies={companies} />
       <CustomReportBuilderSection departments={departments} companies={companies} />
+      <MonthYearCsvReportSection
+        departments={departments} endpoint="illness-by-month" filenamePrefix="illness-by-month"
+        title="Illness per Month/Year"
+        description="Counts of each illness/condition category for a selected month or year. CSV export."
+      />
+      <MonthYearCsvReportSection
+        departments={departments} endpoint="illness-by-department-month" filenamePrefix="illness-by-department"
+        title="Illness per Department per Month/Year"
+        description="Illness/condition category counts cross-tabbed by department, for a selected month or year. CSV export."
+      />
+      <MonthYearCsvReportSection
+        departments={departments} endpoint="medications-by-department" filenamePrefix="medications-by-department"
+        title="Medications Dispensed per Department per Month/Year"
+        description="Count of medications dispensed per department, for a selected month or year. CSV export."
+      />
+      <MonthYearCsvReportSection
+        departments={departments} endpoint="lab-tests-by-department" filenamePrefix="lab-tests-by-department"
+        title="Lab/Diagnostic Test Report per Month/Year/Department"
+        description="Lab/diagnostic test counts cross-tabbed by test type and department, for a selected month or year. CSV export."
+      />
     </div>
   );
 }

@@ -37,6 +37,9 @@ import { apeComprehensiveRouter } from "./routes/apeComprehensiveReport";
 import { drugTestRouter } from "./routes/drugTest";
 import { preEmploymentRouter } from "./routes/preEmployment";
 import { certificatesRouter } from "./routes/certificates";
+import { labTestsRouter } from "./routes/labTests";
+import { labTestTypesRouter } from "./routes/labTestTypes";
+import { reportsCsvRouter } from "./routes/reportsCsv";
 import { getAppName } from "./services/appSettings";
 
 // Last-resort safety net for async errors that occur outside any request's
@@ -118,9 +121,12 @@ app.use("/api/settings", settingsRouter);
 app.use("/api/dental", dentalRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/reports", apeComprehensiveRouter);
+app.use("/api/reports", reportsCsvRouter);
 app.use("/api/drug-tests", drugTestRouter);
 app.use("/api/pre-employment", preEmploymentRouter);
 app.use("/api/certificates", certificatesRouter);
+app.use("/api/lab-tests", labTestsRouter);
+app.use("/api/test-types", labTestTypesRouter);
 
 // Serve built client as static files (single-port deployment)
 const clientDist = path.resolve(__dirname, "../../client/dist");

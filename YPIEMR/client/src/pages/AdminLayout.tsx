@@ -8,6 +8,7 @@ export default function AdminLayout() {
         {[
           ["users", "Users"],
           ["companies", "Companies"],
+          ["test-types", "Test Types"],
           ["templates", "APE Templates"],
           ["import", "Import"],
           ["archived", "Archived Employees"],
