@@ -140,28 +140,11 @@ export default function Layout() {
         <div className={`border-t border-white/10 shrink-0 space-y-3 ${collapsed ? "p-2" : "p-3"}`}>
           {!collapsed && <LiveClock />}
 
-          {/* Which clinic account is this — the org's own name/logo from
-              Admin > Branding, distinct from the FitWork product attribution
-              below it. Only shown once there's something clinic-specific to
-              show (a custom name away from the "FitWork" default, and/or an
-              uploaded logo); otherwise it'd just repeat "FitWork" twice. */}
-          {hasClinicBranding && (
-            <div className={`flex items-center gap-2 min-w-0 ${collapsed ? "justify-center" : ""}`}>
-              {branding.logoUrl && (
-                <img
-                  src={branding.logoUrl}
-                  alt={`${branding.appName} logo`}
-                  className={collapsed ? "w-7 h-7 shrink-0 object-contain" : "h-7 max-w-[88px] object-contain shrink-0"}
-                />
-              )}
-              {!collapsed && (!branding.logoUrl || branding.appName !== "FitWork") && (
-                <span className="text-sm font-medium text-white truncate" title={branding.appName}>{branding.appName}</span>
-              )}
-            </div>
-          )}
-
+          {/* Clinic account branding now lives only in the top-of-sidebar
+              slot above — not repeated here too. This is just the FitWork
+              product attribution. */}
           <div className={collapsed ? "flex justify-center" : ""}>
-            {!collapsed && hasClinicBranding && (
+            {!collapsed && (
               <div className="text-[10px] uppercase tracking-wide text-clinic-300 mb-1">Powered by</div>
             )}
             {collapsed ? (
