@@ -1,7 +1,22 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+
+// Mirrors LabTestTab's duplicate-document check, in the other direction:
+// warn on the upload form if a structured Lab Test result already exists
+// near the date being entered for a LABORATORY-category document.
+const DUPLICATE_WINDOW_DAYS = 3;
+function daysApart(a: string, b: string) {
+  return Math.abs(new Date(a).getTime() - new Date(b).getTime()) / 86_400_000;
+}
+
+interface LabTestSummary {
+  id: string;
+  testType: string;
+  datePerformed: string;
+}
 
 interface Doc {
   id: string;
@@ -128,6 +143,7 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
 }
 
 function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; onClose: () => void; onUploaded: () => void }) {
+  const navigate = useNavigate();
   const [category, setCategory] = useState("LABORATORY");
   const [title, setTitle] = useState("");
   const [documentDate, setDocumentDate] = useState("");
@@ -135,6 +151,13 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [labTests, setLabTests] = useState<LabTestSummary[]>([]);
+
+  useEffect(() => { api.get<LabTestSummary[]>(`/lab-tests?employeeId=${employeeId}`).then(setLabTests); }, [employeeId]);
+
+  const duplicateLabTest = category === "LABORATORY" && documentDate
+    ? labTests.find((t) => daysApart(t.datePerformed, documentDate) <= DUPLICATE_WINDOW_DAYS)
+    : undefined;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -172,6 +195,18 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
         </select>
         <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" required />
         <input type="date" value={documentDate} onChange={(e) => setDocumentDate(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+        {duplicateLabTest && (
+          <div className="bg-amber-50 border border-amber-200 rounded px-3 py-2 text-xs text-amber-800 flex items-center justify-between gap-2">
+            <span>Heads up: a {duplicateLabTest.testType} Lab Test result is already on file dated close to this — check before uploading a duplicate.</span>
+            <button
+              type="button"
+              onClick={() => { onClose(); navigate(`/employees/${employeeId}?tab=labtest&focus=${duplicateLabTest.id}`); }}
+              className="underline shrink-0"
+            >
+              View lab test
+            </button>
+          </div>
+        )}
         <textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
         <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.xlsx,.xls,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-full text-sm" required />
         {error && <p className="text-xs text-red-600">{error}</p>}

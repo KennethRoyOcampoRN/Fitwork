@@ -52,6 +52,24 @@ interface ApeSummary {
   hepaProfileResult: string | null;
 }
 
+interface LabDocSummary {
+  id: string;
+  title: string;
+  documentDate: string | null;
+  createdAt: string;
+}
+
+// Same "check before you duplicate" idea as the APE cross-link above, but
+// against uploaded LABORATORY-category documents instead of APE fields —
+// a nurse recording a structured Lab Test result may not realize the same
+// lab event was already uploaded as a PDF/scan under Labs & Documents.
+// Window is +/- 3 days since a "same event" upload/result pair rarely lands
+// on the exact same calendar day (scan uploaded a day or two after the visit).
+const DUPLICATE_WINDOW_DAYS = 3;
+function daysApart(a: string, b: string) {
+  return Math.abs(new Date(a).getTime() - new Date(b).getTime()) / 86_400_000;
+}
+
 const RESULT_STATUSES = ["NORMAL", "ABNORMAL", "PENDING"];
 
 const EMPTY_FORM = {
@@ -67,6 +85,7 @@ export default function LabTestTab({ employeeId, focusId }: { employeeId: string
   const [tests, setTests] = useState<LabTest[]>([]);
   const [testTypes, setTestTypes] = useState<TestTypeOption[]>([]);
   const [apes, setApes] = useState<ApeSummary[]>([]);
+  const [labDocs, setLabDocs] = useState<LabDocSummary[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -79,6 +98,7 @@ export default function LabTestTab({ employeeId, focusId }: { employeeId: string
   useEffect(() => { load(); }, [employeeId]);
   useEffect(() => { api.get<TestTypeOption[]>("/test-types").then(setTestTypes); }, []);
   useEffect(() => { api.get<ApeSummary[]>(`/ape?employeeId=${employeeId}`).then(setApes); }, [employeeId]);
+  useEffect(() => { api.get<LabDocSummary[]>(`/documents?employeeId=${employeeId}&category=LABORATORY`).then(setLabDocs); }, [employeeId]);
 
   // Duplicate-entry heads-up: if the employee's current-year APE already has
   // a non-null result for the field matching the selected test type, warn
@@ -89,6 +109,12 @@ export default function LabTestTab({ employeeId, focusId }: { employeeId: string
   const duplicateWarning = currentYearApe && apeField && (currentYearApe as unknown as Record<string, string | null>)[apeField]
     ? currentYearApe
     : null;
+
+  // Same idea, against uploaded LABORATORY documents whose date falls near
+  // the date being entered here.
+  const duplicateDoc = form.datePerformed
+    ? labDocs.find((d) => daysApart(d.documentDate || d.createdAt, form.datePerformed) <= DUPLICATE_WINDOW_DAYS)
+    : undefined;
 
   useEffect(() => {
     if (!focusId) return;
@@ -142,6 +168,18 @@ export default function LabTestTab({ employeeId, focusId }: { employeeId: string
                 className="underline shrink-0"
               >
                 View APE record
+              </button>
+            </div>
+          )}
+          {duplicateDoc && (
+            <div className="col-span-full bg-amber-50 border border-amber-200 rounded px-3 py-2 text-xs text-amber-800 flex items-center justify-between gap-2">
+              <span>Heads up: a Laboratory document "{duplicateDoc.title}" is already on file dated close to this test — check before adding a duplicate.</span>
+              <button
+                type="button"
+                onClick={() => navigate(`/employees/${employeeId}?tab=documents&focus=${duplicateDoc.id}`)}
+                className="underline shrink-0"
+              >
+                View document
               </button>
             </div>
           )}
