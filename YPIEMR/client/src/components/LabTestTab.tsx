@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
@@ -19,6 +20,38 @@ interface TestTypeOption {
   isActive: boolean;
 }
 
+// Mirrors server/src/services/apeLabFields.ts's APE_LAB_FIELD_TO_TEST_TYPE —
+// same hand-synced-small-list convention as ILLNESS_CATEGORIES elsewhere in
+// the app. Used only to warn a nurse who's about to record a test type an
+// employee's current-year APE already has a result for (see below); the
+// report-layer join that counts these together lives server-side.
+const APE_LAB_FIELD_TO_TEST_TYPE: Record<string, string> = {
+  cbcResult: "CBC",
+  urinalysisResult: "Urinalysis",
+  fecalysisResult: "Fecalysis",
+  chestXrayResult: "Chest X-ray",
+  ecgResult: "ECG",
+  drugTestResult: "Drug Test",
+  hepatitisScreeningResult: "Hepatitis Screening",
+  hepaProfileResult: "Hepatitis Profile",
+};
+const TEST_TYPE_TO_APE_FIELD: Record<string, string> = Object.fromEntries(
+  Object.entries(APE_LAB_FIELD_TO_TEST_TYPE).map(([field, label]) => [label, field])
+);
+
+interface ApeSummary {
+  id: string;
+  examYear: number;
+  cbcResult: string | null;
+  urinalysisResult: string | null;
+  fecalysisResult: string | null;
+  chestXrayResult: string | null;
+  ecgResult: string | null;
+  drugTestResult: string | null;
+  hepatitisScreeningResult: string | null;
+  hepaProfileResult: string | null;
+}
+
 const RESULT_STATUSES = ["NORMAL", "ABNORMAL", "PENDING"];
 
 const EMPTY_FORM = {
@@ -30,8 +63,10 @@ const EMPTY_FORM = {
 
 export default function LabTestTab({ employeeId, focusId }: { employeeId: string; focusId?: string | null }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [tests, setTests] = useState<LabTest[]>([]);
   const [testTypes, setTestTypes] = useState<TestTypeOption[]>([]);
+  const [apes, setApes] = useState<ApeSummary[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -43,6 +78,17 @@ export default function LabTestTab({ employeeId, focusId }: { employeeId: string
   }
   useEffect(() => { load(); }, [employeeId]);
   useEffect(() => { api.get<TestTypeOption[]>("/test-types").then(setTestTypes); }, []);
+  useEffect(() => { api.get<ApeSummary[]>(`/ape?employeeId=${employeeId}`).then(setApes); }, [employeeId]);
+
+  // Duplicate-entry heads-up: if the employee's current-year APE already has
+  // a non-null result for the field matching the selected test type, warn
+  // before saving — not blocking, since a repeat test can be legitimate,
+  // just a check-before-you-duplicate prompt.
+  const currentYearApe = apes.find((a) => a.examYear === new Date().getFullYear());
+  const apeField = TEST_TYPE_TO_APE_FIELD[form.testType];
+  const duplicateWarning = currentYearApe && apeField && (currentYearApe as unknown as Record<string, string | null>)[apeField]
+    ? currentYearApe
+    : null;
 
   useEffect(() => {
     if (!focusId) return;
@@ -87,6 +133,18 @@ export default function LabTestTab({ employeeId, focusId }: { employeeId: string
             <option value="">Test type</option>
             {activeTestTypes.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
           </select>
+          {duplicateWarning && (
+            <div className="col-span-full bg-amber-50 border border-amber-200 rounded px-3 py-2 text-xs text-amber-800 flex items-center justify-between gap-2">
+              <span>Heads up: this employee's {duplicateWarning.examYear} APE already has a {form.testType} result — check before adding a duplicate.</span>
+              <button
+                type="button"
+                onClick={() => navigate(`/employees/${employeeId}?tab=ape&focus=${duplicateWarning.id}`)}
+                className="underline shrink-0"
+              >
+                View APE record
+              </button>
+            </div>
+          )}
           <input placeholder="Date performed" type="date" value={form.datePerformed} onChange={(e) => setForm({ ...form, datePerformed: e.target.value })} className="border rounded px-2 py-1" required />
           <select value={form.resultStatus} onChange={(e) => setForm({ ...form, resultStatus: e.target.value })} className="border rounded px-2 py-1" required>
             <option value="">Result status</option>

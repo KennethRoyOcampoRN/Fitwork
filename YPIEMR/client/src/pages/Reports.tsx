@@ -546,7 +546,7 @@ export default function Reports() {
       <MonthYearCsvReportSection
         departments={departments} endpoint="lab-tests-by-department" filenamePrefix="lab-tests-by-department"
         title="Lab/Diagnostic Test Report per Month/Year/Department"
-        description="Lab/diagnostic test counts cross-tabbed by test type and department, for a selected month or year. CSV export."
+        description="Lab/diagnostic test counts cross-tabbed by test type and department, for a selected month or year. Includes matching results recorded on an Annual Physical Exam (e.g. chest X-ray, CBC) as separate rows tagged Source = APE, alongside standalone Lab Test entries. CSV export."
       />
     </div>
   );
