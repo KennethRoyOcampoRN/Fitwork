@@ -149,7 +149,7 @@ If you'd rather have a native Windows service (visible in `services.msc`) instea
 
 ```
 nssm install FITWORK "C:\Program Files\nodejs\node.exe" "server\dist\index.js"
-nssm set FITWORK AppDirectory "C:\path\to\YPIEMR"
+nssm set FITWORK AppDirectory "C:\path\to\Fitwork"
 nssm set FITWORK AppEnvironmentExtra NODE_ENV=production
 nssm start FITWORK
 ```
@@ -163,8 +163,8 @@ Nightly backups (`scripts/backup.ts`) create a consistent SQLite copy via `VACUU
 1. Task Scheduler → Create Task → Trigger: Daily at 22:00.
 2. Action: Start a program → Program: `node` (or the full path to `node.exe`) → Arguments: pointing at a small wrapper that runs `npm run backup` from the `server` directory, e.g. a `.bat` file:
    ```bat
-   cd /d C:\path\to\YPIEMR\server
-   npm run backup >> C:\path\to\YPIEMR\data\backups\backup.log 2>&1
+   cd /d C:\path\to\Fitwork\server
+   npm run backup >> C:\path\to\Fitwork\data\backups\backup.log 2>&1
    ```
 3. Point the Task Scheduler action at that `.bat` file.
 

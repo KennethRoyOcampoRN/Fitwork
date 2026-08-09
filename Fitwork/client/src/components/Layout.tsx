@@ -154,7 +154,7 @@ export default function Layout() {
               <img src="/logo-icon.png" alt="FitWork" className="w-7 h-7 shrink-0 object-contain" />
             ) : (
               // The actual source FitWork lockup (client/public/logo-full-dark-bg.png,
-              // derived from YPIEMR/Fitwork Logo.png — see git history/commit
+              // derived from Fitwork/Fitwork Logo.png — see git history/commit
               // message for the exact recolor, not a redrawn approximation)
               // — full icon + wordmark + tagline + "By: Clinicore" line, kept
               // at its original alignment.
