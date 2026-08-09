@@ -95,14 +95,14 @@ export default function Layout() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
       isActive
-        ? "bg-[rgba(228,98,43,0.14)] text-clinic-300"
+        ? "nav-active text-clinic-300"
         : "text-clinic-100 hover:bg-white/10 hover:text-white"
     } ${collapsed ? "justify-center px-2" : ""}`;
 
   return (
     <div className="min-h-screen flex bg-app-gradient">
       <aside
-        className={`${collapsed ? "w-16" : "w-60"} shrink-0 bg-white flex flex-col h-screen sticky top-0 transition-[width] duration-150`}
+        className={`${collapsed ? "w-16" : "w-60"} shrink-0 bg-sidebar flex flex-col h-screen sticky top-0 transition-[width] duration-150`}
       >
         {/* Client/clinic branding (Admin > Settings > Branding) — the
             account's own identity, distinct from the FitWork product
@@ -186,7 +186,7 @@ export default function Layout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="bg-white border-b border-gray-200 px-4 py-2.5">
+        <div className="bg-sidebar border-b border-gray-200 px-4 py-2.5">
           <form onSubmit={onSearchSubmit} className="max-w-md relative">
             <IconSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input

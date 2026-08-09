@@ -15,7 +15,7 @@
  */
 :root {
   --clinic-primary: #D2571A;
-  --clinic-accent: #E4622B;
+  --clinic-accent: #08514E;
   --clinic-50: color-mix(in srgb, var(--clinic-accent) 10%, white);
   --clinic-100: color-mix(in srgb, var(--clinic-accent) 20%, white);
   --clinic-200: color-mix(in srgb, var(--clinic-accent) 35%, white);
@@ -46,6 +46,14 @@
   --text-offwhite: #F2EEE8;
   --glass-bg: rgba(18, 45, 48, 0.55);
   --glass-border: rgba(255, 255, 255, 0.14);
+
+  /* The Branding form labels Primary color "Header, nav bar, and dark
+     accents" — this is that wiring. Same into-near-black mix technique as
+     --app-bg-gradient (driven by --clinic-accent) so it self-darkens
+     regardless of how light/saturated the chosen primary is, kept as its
+     own token rather than reusing --glass-bg so the sidebar/header can
+     shift independently of ordinary content-card glass panels. */
+  --sidebar-bg: color-mix(in srgb, var(--clinic-primary) 38%, rgba(5, 9, 10, 0.82));
 }
 
 body {
@@ -67,6 +75,21 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
+/* Sidebar + top header bar — Primary-tinted glass, distinct from the
+   ordinary .bg-white content-card glass above. */
+.bg-sidebar {
+  background-color: var(--sidebar-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Active nav-item pill. Was a hardcoded rgba(228,98,43,...) (a literal
+   orange, independent of any brand variable) — now a translucent tint of
+   Primary, matching the "dark accents" half of Primary's label. */
+.nav-active {
+  background-color: color-mix(in srgb, var(--clinic-primary) 26%, transparent);
+}
+
 .bg-gray-50 { background-color: rgba(255, 255, 255, 0.04); }
 .bg-gray-100 { background-color: rgba(255, 255, 255, 0.08); }
 .bg-gray-200 { background-color: rgba(255, 255, 255, 0.14); }
