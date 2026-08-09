@@ -35,12 +35,26 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-app-gradient px-4 bg-cover bg-center"
+      className="min-h-screen flex items-center justify-center bg-app-gradient px-4 bg-cover bg-center relative overflow-hidden"
       style={branding.backgroundUrl ? {
         backgroundImage: `linear-gradient(rgba(10, 20, 30, 0.55), rgba(10, 20, 30, 0.55)), url(${branding.backgroundUrl})`,
       } : undefined}
     >
-      <div className="w-full max-w-sm">
+      {/* Subtle visual depth: two faint blurred accent blobs pinned to
+          opposite corners of the viewport, low enough opacity to read as
+          ambient light rather than compete with the card/text. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 -left-40 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-20"
+        style={{ background: "var(--clinic-accent)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-15"
+        style={{ background: "var(--clinic-primary)" }}
+      />
+
+      <div className="w-full max-w-sm relative">
         <div className="flex flex-col items-center mb-6 animate-fade-in-up">
           {branding.logoUrl ? (
             <div className="h-20 w-56 flex items-center justify-center mb-3">
@@ -53,8 +67,15 @@ export default function Login() {
           <p className="text-sm text-clinic-200">{branding.appTagline}</p>
         </div>
 
+        {/* Soft radial glow directly behind the sign-in card. */}
         <div
-          className="bg-white rounded-xl shadow-xl overflow-hidden animate-fade-in-up"
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-[140%] blur-3xl opacity-30"
+          style={{ background: "radial-gradient(ellipse at center, var(--clinic-accent) 0%, transparent 65%)" }}
+        />
+
+        <div
+          className="relative bg-white rounded-xl shadow-xl overflow-hidden animate-fade-in-up"
           style={{ animationDelay: "150ms" }}
         >
           <div className="h-1.5 bg-clinic-600" />

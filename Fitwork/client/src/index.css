@@ -25,12 +25,24 @@
   --clinic-700: color-mix(in srgb, var(--clinic-accent) 85%, black);
   --clinic-900: color-mix(in srgb, var(--clinic-primary) 80%, black);
 
-  /* Dark glassmorphism theme tokens. Gradient runs top-left (darker teal) to
-     bottom-right (lighter teal) so it reads as a clear light source rather
-     than a flat tint — panels need that variation behind them for the
+  /* Dark glassmorphism theme tokens. Gradient runs top-left (darker) to
+     bottom-right (lighter) so it reads as a clear light source rather than
+     a flat tint — panels need that variation behind them for the
      backdrop-filter blur to actually look like glass instead of a flat
-     translucent rectangle. */
-  --app-bg-gradient: linear-gradient(135deg, #081b1d 0%, #123a3f 55%, #1f5259 100%);
+     translucent rectangle.
+     Driven by --clinic-accent (below) rather than a fixed color: each stop
+     is that accent mixed into a near-black base at an increasing
+     percentage. Mixing into black — instead of picking a color directly —
+     is what keeps this readable as a *dark* background no matter how light
+     or saturated the admin's chosen accent is (a pale or bright accent
+     mixed at 12-42% into black still comes out dark; only its hue shows
+     through), so this needs no separate lightness-detection logic. */
+  --app-bg-gradient: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--clinic-accent) 12%, #05090a) 0%,
+    color-mix(in srgb, var(--clinic-accent) 28%, #05090a) 55%,
+    color-mix(in srgb, var(--clinic-accent) 42%, #05090a) 100%
+  );
   --text-offwhite: #F2EEE8;
   --glass-bg: rgba(18, 45, 48, 0.55);
   --glass-border: rgba(255, 255, 255, 0.14);
@@ -75,13 +87,25 @@ body {
    glass. Targets every text-entry control app-wide regardless of which
    panel it sits in, so charting data entry stays easy to read without
    needing a separate light-panel variant. `select`'s dropdown/option list
-   is native-rendered by the OS either way, unaffected by this. */
+   is native-rendered by the OS either way, unaffected by this.
+   !important because some inputs (e.g. Login's) also carry a `text-*`
+   Tailwind class for their original light-theme styling — a plain class
+   selector like `.text-gray-900` outranks the bare element selector below
+   it by specificity regardless of source order, which is exactly how
+   typed text went invisible (off-white-on-white) on the login form. This
+   rule is meant to be an unconditional floor, not something any other
+   theme class should be able to win against. */
 input, select, textarea {
-  background-color: #ffffff;
-  color: #1f2937;
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
 }
+/* :disabled is more specific than the bare element selector above (and
+   matches what disabled:bg-gray-100/disabled:text-gray-500 already meant
+   pre-theme), so this correctly wins over it despite both being
+   !important. */
 input:disabled, select:disabled, textarea:disabled {
-  color: #6b7280;
+  background-color: #f3f4f6 !important;
+  color: #6b7280 !important;
 }
 /* A couple of inputs set an explicit border-gray-300 (rather than the bare
    `border` most fields use, which already resolves fine via currentColor
