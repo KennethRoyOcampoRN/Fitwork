@@ -227,7 +227,15 @@ export default function EmployeeProfile() {
               <SummaryRow icon={IconCalendar} label="Age" value={age(employee.dateOfBirth)} />
               <SummaryRow icon={IconUser} label="Sex" value={employee.sex || "—"} />
               <SummaryRow icon={IconRuler} label="Height/Weight" value={`${v?.heightCm ?? "—"}cm / ${v?.weightKg ?? "—"}kg`} />
-              <SummaryRow icon={IconBuilding} label="Dept" value={employee.department || "—"} />
+              <SummaryRow
+                icon={IconBuilding}
+                label="Dept"
+                value={employee.department || (
+                  <span className="text-amber-700" title="No department set — this employee is excluded from department-scoped reports until it's added.">
+                    ⚠ Not set
+                  </span>
+                )}
+              />
               <SummaryRow icon={IconBriefcase} label="Position" value={employee.position || "—"} />
               <SummaryRow icon={IconBuilding} label="Company" value={employee.company?.name || "—"} />
               <SummaryRow icon={IconTag} label="Religion" value={employee.religion || "—"} />

@@ -18,6 +18,7 @@ interface DashboardCardDef {
 interface EmployeeListItem {
   id: string;
   createdAt: string;
+  department: string | null;
 }
 
 interface LedgerNoteItem {
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<{ activeEmployees: number; notesThisMonth: number; newEmployeesThisMonth: number } | null>(null);
   const [recentNotes, setRecentNotes] = useState<LedgerNoteItem[] | null>(null);
+  const [noDepartmentCount, setNoDepartmentCount] = useState<number | null>(null);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -83,6 +85,11 @@ export default function Dashboard() {
         newEmployeesThisMonth: employees.filter((e) => new Date(e.createdAt) >= monthStart).length,
       });
       setRecentNotes(notes.slice(0, 6));
+      // Every report that breaks numbers down by department silently drops
+      // (or misbuckets under "no department on file") any employee missing
+      // one — a data-quality nudge here, visible regardless of role, is
+      // cheaper than someone noticing a report looks short later.
+      setNoDepartmentCount(employees.filter((e) => !e.department).length);
     });
   }, []);
 
@@ -126,6 +133,18 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
           {statCards.map((s) => <StatCard key={s.key} icon={s.icon} label={s.label} value={s.value} />)}
         </div>
+      )}
+
+      {!!noDepartmentCount && (
+        <button
+          onClick={() => navigate("/employees/all?filter=no-department")}
+          className="w-full flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-3 text-left hover:bg-amber-100 transition-colors"
+        >
+          <span className="text-sm text-amber-800">
+            ⚠ {noDepartmentCount} employee{noDepartmentCount === 1 ? "" : "s"} {noDepartmentCount === 1 ? "has" : "have"} no department set — reports may undercount department totals.
+          </span>
+          <span className="text-xs text-amber-800 underline shrink-0">Review &amp; fix</span>
+        </button>
       )}
 
       <div className="bg-white border rounded-xl p-4 mb-6">
