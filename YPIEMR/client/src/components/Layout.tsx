@@ -62,14 +62,6 @@ interface NavItemDef {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-function initialsFor(fullName?: string): string {
-  if (!fullName) return "?";
-  const parts = fullName.trim().split(/\s+/);
-  const first = parts[0]?.[0] || "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + last).toUpperCase() || "?";
-}
-
 export default function Layout() {
   const { user, logout } = useAuth();
   const branding = useBranding();
@@ -77,6 +69,11 @@ export default function Layout() {
   const { collapsed, toggle } = useSidebarCollapsed();
   const [q, setQ] = useState("");
   const hasClinicBranding = !!branding.logoUrl || branding.appName !== "FitWork";
+  // Collapsed width only has room for a logo, not the name text — if there's
+  // no uploaded logo (custom name only), there's nothing sensible to show
+  // at that width, so the header block itself is skipped rather than
+  // reserving an empty h-20 slot.
+  const showTopBranding = collapsed ? !!branding.logoUrl : hasClinicBranding;
 
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -107,20 +104,25 @@ export default function Layout() {
       <aside
         className={`${collapsed ? "w-16" : "w-60"} shrink-0 bg-white flex flex-col h-screen sticky top-0 transition-[width] duration-150`}
       >
-        <div className={`flex items-center gap-2.5 h-20 border-b border-white/10 shrink-0 ${collapsed ? "justify-center px-2" : "px-4"}`}>
-          <div
-            className="w-9 h-9 rounded-full bg-clinic-600 text-white flex items-center justify-center text-sm font-semibold shrink-0"
-            title={`${user?.fullName} (${user?.role})`}
-          >
-            {initialsFor(user?.fullName)}
+        {/* Client/clinic branding (Admin > Settings > Branding) — the
+            account's own identity, distinct from the FitWork product
+            attribution in the footer. User identity (name/role) already
+            lives in the footer next to Log out, so it isn't repeated here.
+            Skipped entirely when there's no custom branding, rather than
+            showing FitWork's own logo twice. */}
+        {showTopBranding && (
+          <div className={`flex items-center gap-2.5 h-20 border-b border-white/10 shrink-0 ${collapsed ? "justify-center px-2" : "px-4"}`}>
+            {branding.logoUrl ? (
+              <img
+                src={branding.logoUrl}
+                alt={`${branding.appName} logo`}
+                className={collapsed ? "w-9 h-9 object-contain shrink-0" : "h-12 max-w-full object-contain shrink-0"}
+              />
+            ) : (
+              <span className="font-semibold text-white truncate">{branding.appName}</span>
+            )}
           </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-white truncate">{user?.fullName}</div>
-              <div className="text-xs text-clinic-300 truncate">{user?.role}</div>
-            </div>
-          )}
-        </div>
+        )}
 
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
           {navItems.map((item) => {

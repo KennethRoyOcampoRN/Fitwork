@@ -293,7 +293,7 @@ export default function EmployeeProfile() {
                 <button
                   onClick={deletePermanently}
                   disabled={deleteBusy}
-                  className="inline-flex items-center gap-1.5 border border-red-300 text-red-700 hover:bg-red-50 rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+                  className="ml-1 inline-flex items-center gap-1.5 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   <IconTrash className="w-3.5 h-3.5" /> {deleteBusy ? "Deleting..." : "Delete permanently"}
                 </button>
