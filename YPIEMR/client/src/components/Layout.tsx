@@ -112,14 +112,15 @@ export default function Layout() {
             showing FitWork's own logo twice. */}
         {showTopBranding && (
           <div className={`flex items-center gap-2.5 h-20 border-b border-white/10 shrink-0 ${collapsed ? "justify-center px-2" : "px-4"}`}>
-            {branding.logoUrl ? (
+            {branding.logoUrl && (
               <img
                 src={branding.logoUrl}
                 alt={`${branding.appName} logo`}
-                className={collapsed ? "w-9 h-9 object-contain shrink-0" : "h-12 max-w-full object-contain shrink-0"}
+                className={collapsed ? "w-9 h-9 object-contain shrink-0" : "h-10 max-w-[72px] object-contain shrink-0"}
               />
-            ) : (
-              <span className="font-semibold text-white truncate">{branding.appName}</span>
+            )}
+            {!collapsed && (
+              <span className="font-semibold text-white truncate" title={branding.appName}>{branding.appName}</span>
             )}
           </div>
         )}
