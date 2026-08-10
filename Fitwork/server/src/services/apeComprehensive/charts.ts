@@ -14,7 +14,13 @@ export interface ChartBranding {
   accentColor: string;
 }
 
-export const DEFAULT_CHART_BRANDING: ChartBranding = { primaryColor: "#D2571A", accentColor: "#08514E" };
+// primaryColor mirrors the app's default brand Primary (teal) so an
+// unbranded install's charts match its unbranded UI. accentColor is a
+// fixed second-series color, deliberately NOT the brand Accent (see
+// resolveChartBranding in apeComprehensiveReport.ts) — kept as the old
+// brand orange specifically so it stays visually distinct from
+// primaryColor in the common case where neither has been customized.
+export const DEFAULT_CHART_BRANDING: ChartBranding = { primaryColor: "#08514E", accentColor: "#D2571A" };
 
 export interface RenderedChart {
   buffer: Buffer;

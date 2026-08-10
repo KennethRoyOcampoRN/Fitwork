@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useBranding } from "../lib/branding";
 import { ApiError } from "../lib/api";
 import { deriveCertificatePrefix } from "../lib/certificatePrefix";
+import ConfirmModal from "../components/ConfirmModal";
 
-const DEFAULT_PRIMARY = "#D2571A";
-const DEFAULT_ACCENT = "#08514E";
+const DEFAULT_PRIMARY = "#08514E";
+const DEFAULT_ACCENT = "#ffffff";
 const DEFAULT_APP_NAME = "FitWork";
 const DEFAULT_APP_TAGLINE = "by Clinicore — Employee Health Records System";
 
@@ -29,6 +30,7 @@ export default function AdminBranding() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   // Seed the form from whatever's currently active, once branding has loaded.
   useEffect(() => {
@@ -103,7 +105,7 @@ export default function AdminBranding() {
   }
 
   async function resetToDefaults() {
-    if (!confirm(`Reset the logo, background, colors, and app name back to the default "${DEFAULT_APP_NAME}" branding?`)) return;
+    setShowResetModal(false);
     setBusy(true);
     setError(null);
     try {
@@ -277,7 +279,7 @@ export default function AdminBranding() {
           </button>
           <button
             type="button"
-            onClick={resetToDefaults}
+            onClick={() => setShowResetModal(true)}
             disabled={busy}
             className="border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
           >
@@ -285,6 +287,19 @@ export default function AdminBranding() {
           </button>
         </div>
       </form>
+
+      {showResetModal && (
+        <ConfirmModal
+          title="Reset branding to defaults?"
+          confirmLabel="Reset"
+          onConfirm={resetToDefaults}
+          onCancel={() => setShowResetModal(false)}
+        >
+          <p className="text-sm text-gray-700">
+            This resets the logo, background, colors, and app name back to the default "{DEFAULT_APP_NAME}" branding.
+          </p>
+        </ConfirmModal>
+      )}
     </div>
   );
 }

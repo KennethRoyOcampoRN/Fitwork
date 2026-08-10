@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ApiError } from "../lib/api";
 import { IconTrash } from "./icons";
+import ConfirmModal from "./ConfirmModal";
 
 // Shared admin-only "delete permanently" control for clinical records
 // (notes, vitals, medications, documents, APE) — reused across every tab
@@ -10,9 +11,15 @@ import { IconTrash } from "./icons";
 export default function PermanentDeleteButton({
   description,
   onDelete,
+  fullWidth = false,
 }: {
   description: string;
   onDelete: (reason: string) => Promise<void>;
+  // Stretches the trigger to fill its container instead of shrinking to
+  // its text — for stacked-button layouts (e.g. Labs & Documents cards)
+  // where this needs to match a sibling Archive button's width exactly,
+  // rather than being sized to "Delete" alone.
+  fullWidth?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -41,36 +48,36 @@ export default function PermanentDeleteButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors"
+        className={`inline-flex items-center gap-1 whitespace-nowrap bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors ${
+          fullWidth ? "w-full justify-center" : "shrink-0"
+        }`}
       >
-        <IconTrash className="w-3 h-3" /> Delete permanently
+        <IconTrash className="w-3 h-3" /> Delete
       </button>
       {open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-4 w-full max-w-md">
-            <h2 className="font-semibold mb-2 text-red-800">Permanently delete this record?</h2>
-            <p className="text-sm text-gray-700 mb-3">{description}</p>
-            <p className="text-xs text-gray-500 mb-3">
-              This cannot be undone — there is no archive/restore for this action. The record will be removed
-              entirely; a permanent trace (who, what, when, and why) is kept in the Audit Log.
-            </p>
-            <label className="block text-sm font-medium mb-1">Reason for deletion (required)</label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={2}
-              className="w-full border rounded px-2 py-1 text-sm mb-2"
-              autoFocus
-            />
-            {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setOpen(false)} disabled={busy} className="px-4 py-2 text-sm">Cancel</button>
-              <button onClick={confirm} disabled={busy} className="bg-red-700 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
-                {busy ? "Deleting..." : "Delete permanently"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Permanently delete this record?"
+          danger
+          confirmLabel={busy ? "Deleting..." : "Delete"}
+          busy={busy}
+          onConfirm={confirm}
+          onCancel={() => setOpen(false)}
+        >
+          <p className="text-sm text-gray-700 mb-3">{description}</p>
+          <p className="text-xs text-gray-500 mb-3">
+            This cannot be undone — there is no archive/restore for this action. The record will be removed
+            entirely; a permanent trace (who, what, when, and why) is kept in the Audit Log.
+          </p>
+          <label className="block text-sm font-medium mb-1">Reason for deletion (required)</label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={2}
+            className="w-full border rounded px-2 py-1 text-sm mb-2"
+            autoFocus
+          />
+          {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+        </ConfirmModal>
       )}
     </>
   );

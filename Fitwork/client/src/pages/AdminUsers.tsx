@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api";
+import ConfirmModal from "../components/ConfirmModal";
 
 interface UserRow {
   id: string;
@@ -17,6 +18,11 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [form, setForm] = useState({ username: "", fullName: "", role: "NURSE", licenseNumber: "", initialPassword: "" });
   const [error, setError] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetDone, setResetDone] = useState(false);
 
   async function load() {
     setUsers(await api.get<UserRow[]>("/users"));
@@ -40,14 +46,24 @@ export default function AdminUsers() {
     await load();
   }
 
-  async function resetPassword(u: UserRow) {
-    const pw = prompt(`New password for ${u.username} (min 10 chars):`);
-    if (!pw) return;
+  function closeResetModal() {
+    setResetTarget(null);
+    setNewPassword("");
+    setResetError(null);
+    setResetDone(false);
+  }
+
+  async function resetPassword() {
+    if (!resetTarget || newPassword.length < 10) return;
+    setResetBusy(true);
+    setResetError(null);
     try {
-      await api.post(`/users/${u.id}/reset-password`, { newPassword: pw });
-      alert("Password reset. User must change it on next login.");
+      await api.post(`/users/${resetTarget.id}/reset-password`, { newPassword });
+      setResetDone(true);
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not reset password");
+      setResetError(err instanceof ApiError ? err.message : "Could not reset password");
+    } finally {
+      setResetBusy(false);
     }
   }
 
@@ -89,7 +105,7 @@ export default function AdminUsers() {
                     >
                       {u.isActive ? "Deactivate" : "Reactivate"}
                     </button>
-                    <button onClick={() => resetPassword(u)} className="text-xs text-clinic-300 underline">Reset password</button>
+                    <button onClick={() => setResetTarget(u)} className="text-xs text-clinic-300 underline">Reset password</button>
                   </td>
                 </tr>
               ))}
@@ -97,6 +113,34 @@ export default function AdminUsers() {
           </table>
         </div>
       </div>
+
+      {resetTarget && (
+        <ConfirmModal
+          title={`Reset password for ${resetTarget.username}?`}
+          confirmLabel={resetDone ? "Done" : resetBusy ? "Resetting..." : "Reset password"}
+          confirmDisabled={!resetDone && newPassword.length < 10}
+          busy={resetBusy}
+          onConfirm={resetDone ? closeResetModal : resetPassword}
+          onCancel={closeResetModal}
+        >
+          {resetDone ? (
+            <p className="text-sm text-gray-700">Password reset. {resetTarget.username} must change it on next login.</p>
+          ) : (
+            <>
+              <label className="block text-sm font-medium mb-1">New password (min 10 chars)</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                minLength={10}
+                className="w-full border rounded px-2 py-1 text-sm mb-2"
+                autoFocus
+              />
+              {resetError && <p className="text-xs text-red-600 mb-2">{resetError}</p>}
+            </>
+          )}
+        </ConfirmModal>
+      )}
     </div>
   );
 }

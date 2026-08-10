@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import { IconTrash } from "../components/icons";
+import ConfirmModal from "../components/ConfirmModal";
 
 interface ArchivedEmployee {
   id: string;
@@ -16,6 +17,9 @@ interface ArchivedEmployee {
 export default function AdminArchivedEmployees() {
   const [employees, setEmployees] = useState<ArchivedEmployee[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ArchivedEmployee | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function load() {
     setEmployees(await api.get<ArchivedEmployee[]>("/employees/archived"));
@@ -32,23 +36,26 @@ export default function AdminArchivedEmployees() {
     }
   }
 
+  function closeDeleteModal() {
+    setDeleteTarget(null);
+    setDeleteConfirmText("");
+    setDeleteError(null);
+  }
+
   // Reserved for genuine mistakes (duplicate/wrongly created records) — the
   // server independently re-checks the confirmation text and blocks this
   // with a 409 if any clinical notes, medications, documents, vitals, or
-  // APE records are attached, so this prompt is convenience, not the guard.
-  async function deletePermanently(e: ArchivedEmployee) {
-    const confirmText = prompt(
-      `This permanently deletes ${e.lastName}, ${e.firstName} (#${e.employeeCode}) and cannot be undone.\n\n` +
-      `This only works if the record has no clinical history attached — otherwise leave it archived.\n\n` +
-      `Type the employee code or full name to confirm:`
-    );
-    if (!confirmText) return;
-    setBusyId(e.id);
+  // APE records are attached, so this check is convenience, not the guard.
+  async function deletePermanently() {
+    if (!deleteTarget || !deleteConfirmText.trim()) return;
+    setBusyId(deleteTarget.id);
+    setDeleteError(null);
     try {
-      await api.delete(`/employees/${e.id}`, { confirmText });
+      await api.delete(`/employees/${deleteTarget.id}`, { confirmText: deleteConfirmText.trim() });
+      closeDeleteModal();
       await load();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not delete employee");
+      setDeleteError(err instanceof ApiError ? err.message : "Could not delete employee");
     } finally {
       setBusyId(null);
     }
@@ -85,11 +92,11 @@ export default function AdminArchivedEmployees() {
                     {busyId === e.id ? "Restoring..." : "Restore"}
                   </button>
                   <button
-                    onClick={() => deletePermanently(e)}
+                    onClick={() => setDeleteTarget(e)}
                     disabled={busyId === e.id}
                     className="inline-flex items-center gap-1 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                   >
-                    <IconTrash className="w-3 h-3" /> Delete permanently
+                    <IconTrash className="w-3 h-3" /> Delete
                   </button>
                 </td>
               </tr>
@@ -97,6 +104,34 @@ export default function AdminArchivedEmployees() {
           </tbody>
         </table>
       </div>
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Permanently delete this employee?"
+          danger
+          confirmLabel={busyId === deleteTarget.id ? "Deleting..." : "Delete"}
+          confirmDisabled={!deleteConfirmText.trim()}
+          busy={busyId === deleteTarget.id}
+          onConfirm={deletePermanently}
+          onCancel={closeDeleteModal}
+        >
+          <p className="text-sm text-gray-700 mb-3">
+            This permanently deletes {deleteTarget.lastName}, {deleteTarget.firstName} (#{deleteTarget.employeeCode})
+            and cannot be undone.
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            This only works if the record has no clinical history attached — otherwise leave it archived.
+          </p>
+          <label className="block text-sm font-medium mb-1">Type the employee code or full name to confirm</label>
+          <input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            className="w-full border rounded px-2 py-1 text-sm mb-2"
+            autoFocus
+          />
+          {deleteError && <p className="text-xs text-red-600 mb-2">{deleteError}</p>}
+        </ConfirmModal>
+      )}
     </div>
   );
 }

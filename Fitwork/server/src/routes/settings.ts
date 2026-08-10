@@ -21,8 +21,8 @@ export const settingsRouter = Router();
 // must stay public. Only the write/reset endpoints require ADMIN.
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: config.maxUploadBytes } });
 
-export const DEFAULT_PRIMARY_COLOR = "#D2571A";
-export const DEFAULT_ACCENT_COLOR = "#08514E";
+export const DEFAULT_PRIMARY_COLOR = "#08514E";
+export const DEFAULT_ACCENT_COLOR = "#ffffff";
 export { DEFAULT_APP_NAME };
 export const DEFAULT_APP_TAGLINE = "by Clinicore — Employee Health Records System";
 

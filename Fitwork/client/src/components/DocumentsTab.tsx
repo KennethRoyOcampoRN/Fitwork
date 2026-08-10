@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+import ConfirmModal from "./ConfirmModal";
 import { IconArchiveBox } from "./icons";
 import LabelCombobox, { LabelComboboxHandle, LabelOption } from "./LabelCombobox";
 
@@ -47,6 +48,9 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [onlyUnlabeled, setOnlyUnlabeled] = useState(false);
   const [relabelDoc, setRelabelDoc] = useState<Doc | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<Doc | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [archiveBusy, setArchiveBusy] = useState(false);
 
   async function load() {
     const params = new URLSearchParams({ employeeId });
@@ -63,11 +67,21 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
     document.getElementById(`doc-${focusId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [focusId, docs]);
 
-  async function archive(doc: Doc) {
-    const reason = prompt(`Reason for archiving "${doc.title}" (required):`);
-    if (!reason || !reason.trim()) return;
-    await api.post(`/documents/${doc.id}/archive`, { reason });
-    await load();
+  function closeArchiveModal() {
+    setArchiveTarget(null);
+    setArchiveReason("");
+  }
+
+  async function archive() {
+    if (!archiveTarget || !archiveReason.trim()) return;
+    setArchiveBusy(true);
+    try {
+      await api.post(`/documents/${archiveTarget.id}/archive`, { reason: archiveReason.trim() });
+      closeArchiveModal();
+      await load();
+    } finally {
+      setArchiveBusy(false);
+    }
   }
 
   const preview = docs.find((d) => d.id === previewId);
@@ -114,23 +128,30 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
             <div className="text-xs text-gray-500 mt-1">{d.originalFilename} · {formatBytes(d.fileSizeBytes)}</div>
             <div className="text-xs text-gray-400">{d.documentDate ? new Date(d.documentDate).toLocaleDateString() : new Date(d.createdAt).toLocaleDateString()} · {d.uploadedBy.fullName}</div>
             {d.isArchived && <div className="text-xs text-red-600 mt-1">Reason: {d.archiveReason}</div>}
-            <div className="flex gap-3 mt-2">
-              <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-300 underline">Preview</button>
-              <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
-              {d.labelId && <button onClick={() => setRelabelDoc(d)} className="text-xs text-clinic-300 underline">Change label</button>}
-              {!d.isArchived && (
-                <button
-                  onClick={() => archive(d)}
-                  className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
-                >
-                  <IconArchiveBox className="w-3 h-3" /> Archive
-                </button>
-              )}
-              {user?.role === "ADMIN" && (
-                <PermanentDeleteButton
-                  description={`${d.category.replace(/_/g, " ")} document "${d.title}" (${d.originalFilename}), uploaded by ${d.uploadedBy.fullName}.`}
-                  onDelete={async (reason) => { await api.delete(`/documents/${d.id}`, { reason }); await load(); }}
-                />
+            <div className="flex flex-col gap-2 mt-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-300 underline">Preview</button>
+                <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
+                {d.labelId && <button onClick={() => setRelabelDoc(d)} className="text-xs text-clinic-300 underline">Change label</button>}
+              </div>
+              {(!d.isArchived || user?.role === "ADMIN") && (
+                <div className="flex flex-col items-stretch gap-2 w-28">
+                  {!d.isArchived && (
+                    <button
+                      onClick={() => setArchiveTarget(d)}
+                      className="w-full inline-flex items-center justify-center gap-1 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                    >
+                      <IconArchiveBox className="w-3 h-3" /> Archive
+                    </button>
+                  )}
+                  {user?.role === "ADMIN" && (
+                    <PermanentDeleteButton
+                      fullWidth
+                      description={`${d.category.replace(/_/g, " ")} document "${d.title}" (${d.originalFilename}), uploaded by ${d.uploadedBy.fullName}.`}
+                      onDelete={async (reason) => { await api.delete(`/documents/${d.id}`, { reason }); await load(); }}
+                    />
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -143,6 +164,26 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
 
       {relabelDoc && (
         <RelabelModal doc={relabelDoc} onClose={() => setRelabelDoc(null)} onRelabeled={load} />
+      )}
+
+      {archiveTarget && (
+        <ConfirmModal
+          title={`Archive "${archiveTarget.title}"?`}
+          confirmLabel={archiveBusy ? "Archiving..." : "Archive"}
+          confirmDisabled={!archiveReason.trim()}
+          busy={archiveBusy}
+          onConfirm={archive}
+          onCancel={closeArchiveModal}
+        >
+          <label className="block text-sm font-medium mb-1">Reason for archiving (required)</label>
+          <textarea
+            value={archiveReason}
+            onChange={(e) => setArchiveReason(e.target.value)}
+            rows={2}
+            className="w-full border rounded px-2 py-1 text-sm"
+            autoFocus
+          />
+        </ConfirmModal>
       )}
 
       {preview && (
