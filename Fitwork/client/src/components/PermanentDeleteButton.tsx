@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ApiError } from "../lib/api";
+import { IconTrash } from "./icons";
 
 // Shared admin-only "delete permanently" control for clinical records
 // (notes, vitals, medications, documents, APE) — reused across every tab
@@ -38,8 +39,11 @@ export default function PermanentDeleteButton({
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="text-xs text-red-800 underline">
-        Delete permanently
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors"
+      >
+        <IconTrash className="w-3 h-3" /> Delete permanently
       </button>
       {open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

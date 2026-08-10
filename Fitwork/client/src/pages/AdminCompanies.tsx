@@ -124,7 +124,9 @@ export default function AdminCompanies() {
                       <button
                         onClick={() => toggleActive(c)}
                         disabled={rowBusyId === c.id}
-                        className="text-xs text-gray-600 underline disabled:opacity-50"
+                        className={c.isActive
+                          ? "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50"
+                          : "text-xs text-clinic-300 underline disabled:opacity-50"}
                       >
                         {c.isActive ? "Deactivate" : "Reactivate"}
                       </button>
