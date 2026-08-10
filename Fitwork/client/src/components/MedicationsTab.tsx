@@ -103,17 +103,18 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
                 <td className="p-2">{[l.strength, l.dosageForm, l.route, l.frequency].filter(Boolean).join(" · ") || "—"}</td>
                 <td className="p-2">{l.dispensedBy.fullName}</td>
                 <td className="p-2 whitespace-nowrap">
-                  <div className="flex flex-col items-start gap-1">
+                  <div className="flex flex-col items-stretch gap-1 w-28">
                     {!l.isArchived && (
                       <button
                         onClick={() => setArchiveTarget(l)}
-                        className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                        className="inline-flex items-center justify-center gap-1 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
                       >
                         <IconArchiveBox className="w-3 h-3" /> Archive
                       </button>
                     )}
                     {user?.role === "ADMIN" && (
                       <PermanentDeleteButton
+                        fullWidth
                         description={`Medication entry "${l.drugName}" dispensed ${new Date(l.dispensedAt).toLocaleString()} by ${l.dispensedBy.fullName}.`}
                         onDelete={async (reason) => { await api.delete(`/medications/${l.id}`, { reason }); await load(); }}
                       />

@@ -11,9 +11,15 @@ import ConfirmModal from "./ConfirmModal";
 export default function PermanentDeleteButton({
   description,
   onDelete,
+  fullWidth = false,
 }: {
   description: string;
   onDelete: (reason: string) => Promise<void>;
+  // Stretches the trigger to fill its container instead of shrinking to
+  // its text — for stacked-button layouts (e.g. Labs & Documents cards)
+  // where this needs to match a sibling Archive button's width exactly,
+  // rather than being sized to "Delete" alone.
+  fullWidth?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -42,7 +48,9 @@ export default function PermanentDeleteButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors"
+        className={`inline-flex items-center gap-1 whitespace-nowrap bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors ${
+          fullWidth ? "w-full justify-center" : "shrink-0"
+        }`}
       >
         <IconTrash className="w-3 h-3" /> Delete
       </button>

@@ -134,20 +134,23 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
                 <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
                 {d.labelId && <button onClick={() => setRelabelDoc(d)} className="text-xs text-clinic-300 underline">Change label</button>}
               </div>
-              {!d.isArchived && (
-                <button
-                  onClick={() => setArchiveTarget(d)}
-                  className="inline-flex items-center gap-1 self-start shrink-0 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
-                >
-                  <IconArchiveBox className="w-3 h-3" /> Archive
-                </button>
-              )}
-              {user?.role === "ADMIN" && (
-                <div className="self-start">
-                  <PermanentDeleteButton
-                    description={`${d.category.replace(/_/g, " ")} document "${d.title}" (${d.originalFilename}), uploaded by ${d.uploadedBy.fullName}.`}
-                    onDelete={async (reason) => { await api.delete(`/documents/${d.id}`, { reason }); await load(); }}
-                  />
+              {(!d.isArchived || user?.role === "ADMIN") && (
+                <div className="flex flex-col items-stretch gap-2 w-28">
+                  {!d.isArchived && (
+                    <button
+                      onClick={() => setArchiveTarget(d)}
+                      className="w-full inline-flex items-center justify-center gap-1 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                    >
+                      <IconArchiveBox className="w-3 h-3" /> Archive
+                    </button>
+                  )}
+                  {user?.role === "ADMIN" && (
+                    <PermanentDeleteButton
+                      fullWidth
+                      description={`${d.category.replace(/_/g, " ")} document "${d.title}" (${d.originalFilename}), uploaded by ${d.uploadedBy.fullName}.`}
+                      onDelete={async (reason) => { await api.delete(`/documents/${d.id}`, { reason }); await load(); }}
+                    />
+                  )}
                 </div>
               )}
             </div>
