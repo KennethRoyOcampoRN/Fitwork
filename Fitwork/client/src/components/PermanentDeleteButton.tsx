@@ -41,9 +41,9 @@ export default function PermanentDeleteButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors"
+        className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors"
       >
-        <IconTrash className="w-3 h-3" /> Delete permanently
+        <IconTrash className="w-3 h-3" /> Delete
       </button>
       {open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

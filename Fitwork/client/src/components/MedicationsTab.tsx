@@ -92,7 +92,7 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
                   {!l.isArchived && (
                     <button
                       onClick={() => archive(l)}
-                      className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                      className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
                     >
                       <IconArchiveBox className="w-3 h-3" /> Archive
                     </button>
