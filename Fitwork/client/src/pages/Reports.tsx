@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import ScopeSelect, { DEFAULT_SCOPE, ScopeValue, scopeParams, useCompanies } from "../components/ScopeSelect";
+import FolderTabs from "../components/FolderTabs";
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -559,38 +560,6 @@ function CustomReportBuilderSection({ departments, companies }: { departments: s
         </div>
       </div>
     </ReportCard>
-  );
-}
-
-// Folder/sheet-tab style tab strip, reused for both the top-level category
-// row and each category's sub-tab row. Deliberately not a flex-1/equal-
-// width or truncating layout — each tab is sized to its own label (plain
-// inline button sizing) and the strip just wraps onto additional rows via
-// flex-wrap when it runs out of horizontal space, rather than shrinking,
-// squishing, or scrolling. `size` swaps a couple of classes for the
-// slightly smaller/lighter sub-tab row so the two levels stay visually
-// distinguishable at a glance.
-function FolderTabs({ tabs, active, onChange, size = "lg" }: {
-  tabs: { key: string; label: string }[]; active: string; onChange: (key: string) => void; size?: "lg" | "sm";
-}) {
-  return (
-    <div className="flex flex-wrap gap-1">
-      {tabs.map((t) => (
-        <button
-          key={t.key}
-          onClick={() => onChange(t.key)}
-          className={`rounded-t-lg font-medium whitespace-nowrap transition-colors ${
-            size === "lg" ? "px-4 py-2 text-sm" : "px-3 py-1.5 text-xs"
-          } ${
-            active === t.key
-              ? "bg-clinic-600 shadow-sm"
-              : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
   );
 }
 
