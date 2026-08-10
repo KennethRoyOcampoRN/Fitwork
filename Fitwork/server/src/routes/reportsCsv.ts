@@ -154,23 +154,25 @@ reportsCsvRouter.get("/medications-by-department/export.csv", requireNurseOrAdmi
   sendCsv(res, `medications-by-department-${label}${department ? `-${department}` : ""}.csv`, toCsv(["Department", "Medications Dispensed"], rows));
 });
 
-// ── 4. Lab/diagnostic documents per month/year/department, by result
-// status ─────────────────────────────────────────────────────────────
-// Sourced from MedicalDocument (Labs & Documents uploads) rather than a
-// separate structured Lab Test model. There's no controlled "test type"
-// field on MedicalDocument (an explicit decision — see the design
-// discussion this was decided in) — the upload's free-text Title is used
-// as the test type dimension instead, exactly as the nurse typed it. That
-// means rows can fragment (e.g. "CBC" and "CBC Result" count separately)
-// since nothing normalizes it, unlike the old admin-managed Test Type
-// list. Category is a required filter (the client populates its dropdown
-// dynamically from GET /reports/document-categories, same pattern as the
-// Department dropdown).
+// ── 4. Lab/diagnostic documents per month/year/department, by label ────
+// Sourced from MedicalDocument (Labs & Documents uploads), cross-tabbed by
+// its category-scoped DocumentLabel (e.g. "CBC" under LABORATORY) rather
+// than the raw free-text Title — labels are a controlled, reusable,
+// combobox-driven classification (see routes/documentLabels.ts), so counts
+// don't fragment from inconsistent typing the way Title-based grouping
+// used to. Documents with no label yet (pre-migration stragglers still
+// awaiting manual assignment — see GET /documents/needs-label) are rolled
+// into a single "(No label assigned)" row rather than dropped. Category is
+// a required filter (the client populates its dropdown dynamically from
+// GET /reports/document-categories, same pattern as the Department
+// dropdown).
+const NO_LABEL = "(No label assigned)";
+
 reportsCsvRouter.get("/lab-diagnostic-by-department/export.csv", requireNurseOrAdmin, async (req, res) => {
   const parsed = periodSchema.extend({ category: z.string().min(1) }).safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { year, month, department, category } = parsed.data;
-  const { start, end, label } = resolveDateRange(year, month);
+  const { start, end, label: periodLabel } = resolveDateRange(year, month);
 
   // A document's clinical date is documentDate when set, falling back to
   // createdAt (upload time) when it isn't — same fallback DocumentsTab.tsx
@@ -185,13 +187,17 @@ reportsCsvRouter.get("/lab-diagnostic-by-department/export.csv", requireNurseOrA
       ],
       ...(department ? { employee: { department } } : {}),
     },
-    select: { title: true, employee: { select: { department: true } } },
+    select: { label: { select: { name: true } }, employee: { select: { department: true } } },
   });
 
   const departments = department ? [department] : await allDepartments();
-  const testTypes = Array.from(new Set(docs.map((d) => d.title))).sort();
+  const testTypes = Array.from(new Set(docs.map((d) => d.label?.name || NO_LABEL))).sort((a, b) => {
+    if (a === NO_LABEL) return 1;
+    if (b === NO_LABEL) return -1;
+    return a.localeCompare(b);
+  });
 
-  // table[testType][department] = count
+  // table[label][department] = count
   const table = new Map<string, Map<string, number>>();
   function rowFor(testType: string): Map<string, number> {
     if (!table.has(testType)) table.set(testType, new Map());
@@ -202,7 +208,7 @@ reportsCsvRouter.get("/lab-diagnostic-by-department/export.csv", requireNurseOrA
   for (const d of docs) {
     const dept = d.employee.department;
     if (!dept) { unspecifiedDept++; continue; }
-    const row = rowFor(d.title);
+    const row = rowFor(d.label?.name || NO_LABEL);
     row.set(dept, (row.get(dept) || 0) + 1);
   }
 
@@ -215,7 +221,7 @@ reportsCsvRouter.get("/lab-diagnostic-by-department/export.csv", requireNurseOrA
   }
   if (!department && unspecifiedDept > 0) rows.push(["(No department on file)", ...departments.map(() => ""), unspecifiedDept]);
 
-  await writeAudit({ req, userId: req.currentUser!.id, action: "DOWNLOAD_DOC", entityType: "LabDiagnosticByDepartmentReport", details: { period: label, department: department || null, category, rowCount: docs.length } });
+  await writeAudit({ req, userId: req.currentUser!.id, action: "DOWNLOAD_DOC", entityType: "LabDiagnosticByDepartmentReport", details: { period: periodLabel, department: department || null, category, rowCount: docs.length } });
 
-  sendCsv(res, `lab-diagnostic-by-department-${category}-${label}${department ? `-${department}` : ""}.csv`, toCsv(header, rows));
+  sendCsv(res, `lab-diagnostic-by-department-${category}-${periodLabel}${department ? `-${department}` : ""}.csv`, toCsv(header, rows));
 });

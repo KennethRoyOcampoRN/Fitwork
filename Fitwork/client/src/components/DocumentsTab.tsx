@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+import LabelCombobox, { LabelComboboxHandle, LabelOption } from "./LabelCombobox";
 
 interface Doc {
   id: string;
   category: string;
   title: string;
+  labelId: string | null;
+  label: LabelOption | null;
   documentDate: string | null;
   originalFilename: string;
   mimeType: string;
@@ -41,6 +44,8 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
   const [to, setTo] = useState("");
   const [showUpload, setShowUpload] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [onlyUnlabeled, setOnlyUnlabeled] = useState(false);
+  const [relabelDoc, setRelabelDoc] = useState<Doc | null>(null);
 
   async function load() {
     const params = new URLSearchParams({ employeeId });
@@ -65,6 +70,8 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
   }
 
   const preview = docs.find((d) => d.id === previewId);
+  const visibleDocs = onlyUnlabeled ? docs.filter((d) => !d.labelId) : docs;
+  const unlabeledCount = docs.filter((d) => !d.labelId).length;
 
   return (
     <div>
@@ -75,12 +82,18 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
         </select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border rounded px-2 py-1 text-sm" />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border rounded px-2 py-1 text-sm" />
+        {unlabeledCount > 0 && (
+          <label className="flex items-center gap-1.5 text-xs text-amber-800">
+            <input type="checkbox" checked={onlyUnlabeled} onChange={(e) => setOnlyUnlabeled(e.target.checked)} />
+            Needs label ({unlabeledCount})
+          </label>
+        )}
         <button onClick={() => setShowUpload(true)} className="ml-auto bg-clinic-600 text-white rounded px-3 py-1.5 text-sm">+ Upload document</button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {docs.length === 0 && <p className="text-sm text-gray-400 col-span-full">No documents uploaded yet.</p>}
-        {docs.map((d) => (
+        {visibleDocs.length === 0 && <p className="text-sm text-gray-400 col-span-full">{onlyUnlabeled ? "No documents need a label." : "No documents uploaded yet."}</p>}
+        {visibleDocs.map((d) => (
           <div key={d.id} id={`doc-${d.id}`} className={`bg-white border rounded-xl p-3 text-sm ${d.isArchived ? "opacity-60" : ""} ${focusId === d.id ? "ring-2 ring-clinic-400" : ""}`}>
             <div className="flex justify-between items-start gap-1">
               <span className="text-xs bg-gray-100 rounded px-1.5 py-0.5">{d.category.replace(/_/g, " ")}</span>
@@ -92,12 +105,18 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
               </div>
             </div>
             <div className="font-medium mt-1">{d.title}</div>
-            <div className="text-xs text-gray-500">{d.originalFilename} · {formatBytes(d.fileSizeBytes)}</div>
+            {!d.labelId && (
+              <button onClick={() => setRelabelDoc(d)} className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-1 inline-block">
+                ⚠ Needs label — Assign
+              </button>
+            )}
+            <div className="text-xs text-gray-500 mt-1">{d.originalFilename} · {formatBytes(d.fileSizeBytes)}</div>
             <div className="text-xs text-gray-400">{d.documentDate ? new Date(d.documentDate).toLocaleDateString() : new Date(d.createdAt).toLocaleDateString()} · {d.uploadedBy.fullName}</div>
             {d.isArchived && <div className="text-xs text-red-600 mt-1">Reason: {d.archiveReason}</div>}
             <div className="flex gap-3 mt-2">
               <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-300 underline">Preview</button>
               <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
+              {d.labelId && <button onClick={() => setRelabelDoc(d)} className="text-xs text-clinic-300 underline">Change label</button>}
               {!d.isArchived && <button onClick={() => archive(d)} className="text-xs text-red-600 underline">Archive</button>}
               {user?.role === "ADMIN" && (
                 <PermanentDeleteButton
@@ -112,6 +131,10 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
 
       {showUpload && (
         <UploadModal employeeId={employeeId} onClose={() => setShowUpload(false)} onUploaded={load} />
+      )}
+
+      {relabelDoc && (
+        <RelabelModal doc={relabelDoc} onClose={() => setRelabelDoc(null)} onRelabeled={load} />
       )}
 
       {preview && (
@@ -141,13 +164,13 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
 
 function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; onClose: () => void; onUploaded: () => void }) {
   const [category, setCategory] = useState("LABORATORY");
-  const [title, setTitle] = useState("");
   const [documentDate, setDocumentDate] = useState("");
   const [notes, setNotes] = useState("");
   const [resultStatus, setResultStatus] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const labelRef = useRef<LabelComboboxHandle>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -155,10 +178,13 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
     setBusy(true);
     setError(null);
     try {
+      const label = await labelRef.current?.resolve();
+      if (!label) { setError("Pick or type a label"); return; }
+
       const form = new FormData();
       form.append("employeeId", employeeId);
       form.append("category", category);
-      form.append("title", title);
+      form.append("labelId", label.id);
       if (documentDate) form.append("documentDate", documentDate);
       if (notes) form.append("notes", notes);
       if (resultStatus) form.append("resultStatus", resultStatus);
@@ -184,7 +210,7 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full border rounded px-2 py-1 text-sm">
           {CATEGORIES.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
         </select>
-        <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" required />
+        <LabelCombobox key={category} ref={labelRef} category={category} placeholder="Label (e.g. CBC, Chest X-ray)..." />
         <input type="date" value={documentDate} onChange={(e) => setDocumentDate(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
         <select value={resultStatus} onChange={(e) => setResultStatus(e.target.value)} className="w-full border rounded px-2 py-1 text-sm">
           <option value="">Result status (optional)</option>
@@ -196,6 +222,49 @@ function UploadModal({ employeeId, onClose, onUploaded }: { employeeId: string; 
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm">Cancel</button>
           <button type="submit" disabled={busy} className="bg-clinic-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">{busy ? "Uploading..." : "Upload"}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function RelabelModal({ doc, onClose, onRelabeled }: { doc: Doc; onClose: () => void; onRelabeled: () => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const labelRef = useRef<LabelComboboxHandle>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const label = await labelRef.current?.resolve();
+      if (!label) { setError("Pick or type a label"); return; }
+      await api.patch(`/documents/${doc.id}/label`, { labelId: label.id });
+      onRelabeled();
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not assign label");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <form onSubmit={submit} className="bg-white rounded-xl p-4 w-full max-w-md space-y-2">
+        <div className="flex justify-between items-center mb-1">
+          <h2 className="font-semibold">Assign label</h2>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <p className="text-xs text-gray-500">
+          {doc.category.replace(/_/g, " ")} document currently titled "{doc.title}", uploaded by {doc.uploadedBy.fullName}.
+        </p>
+        <LabelCombobox ref={labelRef} category={doc.category} initial={doc.label} placeholder="Label (e.g. CBC, Chest X-ray)..." />
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm">Cancel</button>
+          <button type="submit" disabled={busy} className="bg-clinic-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">{busy ? "Saving..." : "Save"}</button>
         </div>
       </form>
     </div>

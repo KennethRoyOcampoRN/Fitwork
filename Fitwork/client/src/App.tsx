@@ -15,6 +15,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminLayout from "./pages/AdminLayout";
 import AdminTemplates from "./pages/AdminTemplates";
 import AdminImport from "./pages/AdminImport";
+import AdminNeedsLabel from "./pages/AdminNeedsLabel";
 import AdminAudit from "./pages/AdminAudit";
 import AdminBackup from "./pages/AdminBackup";
 import AdminCompanies from "./pages/AdminCompanies";
@@ -91,6 +92,7 @@ export default function App() {
               <Route path="companies" element={<AdminCompanies />} />
               <Route path="templates" element={<AdminTemplates />} />
               <Route path="import" element={<AdminImport />} />
+              <Route path="needs-label" element={<AdminNeedsLabel />} />
               <Route path="archived" element={<AdminArchivedEmployees />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="settings" element={<AdminSettingsLayout />}>

@@ -37,6 +37,7 @@ import { apeComprehensiveRouter } from "./routes/apeComprehensiveReport";
 import { drugTestRouter } from "./routes/drugTest";
 import { preEmploymentRouter } from "./routes/preEmployment";
 import { certificatesRouter } from "./routes/certificates";
+import { documentLabelsRouter } from "./routes/documentLabels";
 import { reportsCsvRouter } from "./routes/reportsCsv";
 import { getAppName } from "./services/appSettings";
 
@@ -109,6 +110,7 @@ app.use("/api/employees", employeesRouter);
 app.use("/api/vitals", vitalsRouter);
 app.use("/api/notes", notesRouter);
 app.use("/api/documents", documentsRouter);
+app.use("/api/document-labels", documentLabelsRouter);
 app.use("/api/medications", medicationsRouter);
 app.use("/api/ape", apeRouter);
 app.use("/api/templates", templatesRouter);

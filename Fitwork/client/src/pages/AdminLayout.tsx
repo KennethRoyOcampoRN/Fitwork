@@ -10,6 +10,7 @@ export default function AdminLayout() {
           ["companies", "Companies"],
           ["templates", "APE Templates"],
           ["import", "Import"],
+          ["needs-label", "Needs Label"],
           ["archived", "Archived Employees"],
           ["reports", "Reports"],
           ["settings", "Settings"],

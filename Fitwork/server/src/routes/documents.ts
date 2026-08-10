@@ -10,6 +10,7 @@ import { writeAudit } from "../services/audit";
 import { employeeDir } from "../lib/storage";
 import { isAllowedUpload } from "../lib/magicBytes";
 import { config } from "../config";
+import { toCsv } from "../services/csv";
 
 export const documentsRouter = Router();
 documentsRouter.use(requireAuth);
@@ -24,7 +25,7 @@ documentsRouter.post("/", upload.single("file"), async (req, res) => {
   const parsed = z.object({
     employeeId: z.string().uuid(),
     category: z.enum(CATEGORIES),
-    title: z.string().min(1),
+    labelId: z.string().uuid(),
     documentDate: z.string().optional(),
     notes: z.string().optional(),
     resultStatus: z.enum(RESULT_STATUSES).optional(),
@@ -34,6 +35,10 @@ documentsRouter.post("/", upload.single("file"), async (req, res) => {
 
   const employee = await prisma.employee.findUnique({ where: { id: parsed.data.employeeId } });
   if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+  const label = await prisma.documentLabel.findUnique({ where: { id: parsed.data.labelId } });
+  if (!label) return res.status(404).json({ error: "Label not found" });
+  if (label.category !== parsed.data.category) return res.status(400).json({ error: "Label does not belong to the selected category" });
 
   const ext = path.extname(req.file.originalname).replace(".", "").toLowerCase();
   if (!ALLOWED_EXTENSIONS.has(ext)) {
@@ -52,7 +57,8 @@ documentsRouter.post("/", upload.single("file"), async (req, res) => {
     data: {
       employeeId: employee.id,
       category: parsed.data.category,
-      title: parsed.data.title,
+      title: label.name,
+      labelId: label.id,
       documentDate: parsed.data.documentDate ? new Date(parsed.data.documentDate) : null,
       filePath,
       originalFilename: req.file.originalname,
@@ -85,9 +91,82 @@ documentsRouter.get("/", async (req, res) => {
   const docs = await prisma.medicalDocument.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { uploadedBy: { select: { fullName: true } } },
+    include: { uploadedBy: { select: { fullName: true } }, label: { select: { id: true, name: true } } },
   });
   res.json(docs);
+});
+
+// ── Documents left unlabeled by the exact-match auto-migration (typos/
+// one-off title variants that had no sibling to link to) — cross-employee,
+// so Nurse/Admin can work through the backlog from one list rather than
+// hunting per employee. Same role convention as reports.ts's clinic-wide
+// tools.
+documentsRouter.get("/needs-label", requireRole("NURSE", "ADMIN"), async (_req, res) => {
+  const docs = await prisma.medicalDocument.findMany({
+    where: { labelId: null },
+    orderBy: { createdAt: "desc" },
+    include: {
+      employee: { select: { id: true, employeeCode: true, firstName: true, lastName: true } },
+      uploadedBy: { select: { fullName: true } },
+    },
+  });
+  res.json(docs);
+});
+
+// CSV sibling of the above — a handoff-friendly artifact for reviewing the
+// backlog offline (e.g. right after upgrading to this version, when the
+// exact-match auto-migration has just run against existing documents).
+documentsRouter.get("/needs-label/export.csv", requireRole("NURSE", "ADMIN"), async (req, res) => {
+  const docs = await prisma.medicalDocument.findMany({
+    where: { labelId: null },
+    orderBy: { createdAt: "desc" },
+    include: {
+      employee: { select: { employeeCode: true, firstName: true, lastName: true } },
+      uploadedBy: { select: { fullName: true } },
+    },
+  });
+
+  const header = ["Employee Code", "Employee Name", "Category", "Title", "Document Date", "Uploaded By", "Uploaded At", "Document ID"];
+  const rows = docs.map((d) => [
+    d.employee.employeeCode,
+    `${d.employee.lastName}, ${d.employee.firstName}`,
+    d.category,
+    d.title,
+    d.documentDate ? d.documentDate.toISOString().slice(0, 10) : "",
+    d.uploadedBy.fullName,
+    d.createdAt.toISOString().slice(0, 10),
+    d.id,
+  ]);
+
+  await writeAudit({ req, userId: req.currentUser!.id, action: "DOWNLOAD_DOC", entityType: "NeedsLabelReport", details: { rowCount: docs.length } });
+
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="documents-needing-label.csv"`);
+  res.send(toCsv(header, rows));
+});
+
+const relabelSchema = z.object({ labelId: z.string().uuid() });
+
+documentsRouter.patch("/:id/label", async (req, res) => {
+  const parsed = relabelSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const doc = await prisma.medicalDocument.findUnique({ where: { id: req.params.id } });
+  if (!doc) return res.status(404).json({ error: "Document not found" });
+
+  const label = await prisma.documentLabel.findUnique({ where: { id: parsed.data.labelId } });
+  if (!label) return res.status(404).json({ error: "Label not found" });
+  if (label.category !== doc.category) return res.status(400).json({ error: "Label does not belong to this document's category" });
+
+  const updated = await prisma.medicalDocument.update({
+    where: { id: doc.id },
+    data: { labelId: label.id, title: label.name },
+    include: { label: { select: { id: true, name: true } } },
+  });
+
+  await writeAudit({ req, userId: req.currentUser!.id, action: "RELABEL_DOCUMENT", entityType: "MedicalDocument", entityId: doc.id, employeeId: doc.employeeId, details: { before: doc.title, after: label.name } });
+
+  res.json(updated);
 });
 
 documentsRouter.get("/:id/file", async (req, res) => {
