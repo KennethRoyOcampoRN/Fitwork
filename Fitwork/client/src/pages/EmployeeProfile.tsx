@@ -113,6 +113,17 @@ export default function EmployeeProfile() {
 
   useEffect(() => { load(); }, [id]);
 
+  // Recent Activity is only refetched by the effect above, on mount / when
+  // the employee id changes — switching tabs (e.g. uploading a document,
+  // then clicking back to Overview) doesn't remount this component, so
+  // without this it kept showing whatever was current when the page first
+  // loaded. Refetch just the timeline every time Overview becomes the
+  // active tab so it can't go stale behind any other tab's edits.
+  useEffect(() => {
+    if (tab !== "overview" || !id) return;
+    api.get<{ timeline: TimelineItem[] }>(`/employees/${id}/overview`).then((ov) => setTimeline(ov.timeline));
+  }, [tab, id]);
+
   if (!employee) return <div className="p-4 text-sm text-gray-500">Loading...</div>;
 
   const v = employee.latestVitals;

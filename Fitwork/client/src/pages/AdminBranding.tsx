@@ -208,7 +208,7 @@ export default function AdminBranding() {
               {logoPreview || branding.logoUrl ? (
                 <img src={logoPreview || branding.logoUrl || undefined} className="max-h-full max-w-full object-contain" />
               ) : (
-                <span className="text-xs text-clinic-300">Default</span>
+                <span className="text-xs">Default</span>
               )}
             </div>
             <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => onLogoChange(e.target.files?.[0] || null)} className="text-sm" />
