@@ -157,14 +157,15 @@ reportsCsvRouter.get("/medications-by-department/export.csv", requireNurseOrAdmi
 // ── 4. Lab/diagnostic documents per month/year/department, by result
 // status ─────────────────────────────────────────────────────────────
 // Sourced from MedicalDocument (Labs & Documents uploads) rather than a
-// separate structured Lab Test model — a document's optional resultStatus
-// (Normal/Abnormal/Pending, set at upload time) is the only "result" data
-// this report has to work with. Category is a required filter (the client
-// populates its dropdown dynamically from GET /reports/document-categories,
-// same pattern as the Department dropdown), since categories other than
-// LABORATORY/IMAGING rarely carry a meaningful result status.
-const RESULT_STATUSES = ["NORMAL", "ABNORMAL", "PENDING"] as const;
-
+// separate structured Lab Test model. There's no controlled "test type"
+// field on MedicalDocument (an explicit decision — see the design
+// discussion this was decided in) — the upload's free-text Title is used
+// as the test type dimension instead, exactly as the nurse typed it. That
+// means rows can fragment (e.g. "CBC" and "CBC Result" count separately)
+// since nothing normalizes it, unlike the old admin-managed Test Type
+// list. Category is a required filter (the client populates its dropdown
+// dynamically from GET /reports/document-categories, same pattern as the
+// Department dropdown).
 reportsCsvRouter.get("/lab-diagnostic-by-department/export.csv", requireNurseOrAdmin, async (req, res) => {
   const parsed = periodSchema.extend({ category: z.string().min(1) }).safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
@@ -184,34 +185,35 @@ reportsCsvRouter.get("/lab-diagnostic-by-department/export.csv", requireNurseOrA
       ],
       ...(department ? { employee: { department } } : {}),
     },
-    select: { resultStatus: true, employee: { select: { department: true } } },
+    select: { title: true, employee: { select: { department: true } } },
   });
 
   const departments = department ? [department] : await allDepartments();
-  // table[department][resultStatus | "UNSPECIFIED"] = count
-  const table = new Map<string, Map<string, number>>();
-  for (const dept of departments) table.set(dept, new Map());
-  let unspecifiedDept = 0;
+  const testTypes = Array.from(new Set(docs.map((d) => d.title))).sort();
 
+  // table[testType][department] = count
+  const table = new Map<string, Map<string, number>>();
+  function rowFor(testType: string): Map<string, number> {
+    if (!table.has(testType)) table.set(testType, new Map());
+    return table.get(testType)!;
+  }
+
+  let unspecifiedDept = 0;
   for (const d of docs) {
     const dept = d.employee.department;
     if (!dept) { unspecifiedDept++; continue; }
-    if (!table.has(dept)) table.set(dept, new Map());
-    const row = table.get(dept)!;
-    const key = d.resultStatus || "UNSPECIFIED";
-    row.set(key, (row.get(key) || 0) + 1);
+    const row = rowFor(d.title);
+    row.set(dept, (row.get(dept) || 0) + 1);
   }
 
-  const header = ["Department", "Total", "Normal", "Abnormal", "Pending", "Unspecified"];
+  const header = ["Test Type", ...departments, "Total"];
   const rows: (string | number)[][] = [];
-  for (const dept of departments) {
-    const row = table.get(dept) || new Map();
-    const counts = RESULT_STATUSES.map((s) => row.get(s) || 0);
-    const unspecified = row.get("UNSPECIFIED") || 0;
-    const total = counts.reduce((a, b) => a + b, 0) + unspecified;
-    rows.push([dept, total, ...counts, unspecified]);
+  for (const tt of testTypes) {
+    const row = rowFor(tt);
+    const counts = departments.map((d) => row.get(d) || 0);
+    rows.push([tt, ...counts, counts.reduce((a, b) => a + b, 0)]);
   }
-  if (!department && unspecifiedDept > 0) rows.push(["(No department on file)", unspecifiedDept, "", "", "", unspecifiedDept]);
+  if (!department && unspecifiedDept > 0) rows.push(["(No department on file)", ...departments.map(() => ""), unspecifiedDept]);
 
   await writeAudit({ req, userId: req.currentUser!.id, action: "DOWNLOAD_DOC", entityType: "LabDiagnosticByDepartmentReport", details: { period: label, department: department || null, category, rowCount: docs.length } });
 

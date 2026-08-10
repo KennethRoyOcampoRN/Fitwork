@@ -163,7 +163,7 @@ function LabDiagnosticReportSection({ departments, categories }: { departments: 
   return (
     <ReportCard
       title="Lab/Diagnostic Report per Month/Year/Department"
-      description="Counts of uploaded Labs & Documents by result status (Normal/Abnormal/Pending), cross-tabbed by department, for a selected category and month or year. CSV export."
+      description={'Counts of uploaded Labs & Documents cross-tabbed by test type (the document\'s Title, as entered at upload) and department, for a selected category and month or year. Titles are free text, so near-duplicate wording (e.g. "CBC" vs "CBC Result") counts as separate rows. CSV export.'}
     >
       <div className="flex flex-wrap gap-2 items-end mb-3">
         <div>
