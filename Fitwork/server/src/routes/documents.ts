@@ -16,8 +16,9 @@ documentsRouter.use(requireAuth);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: config.maxUploadBytes } });
 
-const CATEGORIES = ["LABORATORY", "IMAGING", "APE", "DENTAL", "MEDICAL_CERTIFICATE", "CLEARANCE", "VACCINATION", "OTHER"] as const;
+export const CATEGORIES = ["LABORATORY", "IMAGING", "APE", "DENTAL", "MEDICAL_CERTIFICATE", "CLEARANCE", "VACCINATION", "OTHER"] as const;
 const ALLOWED_EXTENSIONS = new Set(["pdf", "jpg", "jpeg", "png", "webp", "xlsx", "xls", "docx"]);
+const RESULT_STATUSES = ["NORMAL", "ABNORMAL", "PENDING"] as const;
 
 documentsRouter.post("/", upload.single("file"), async (req, res) => {
   const parsed = z.object({
@@ -26,6 +27,7 @@ documentsRouter.post("/", upload.single("file"), async (req, res) => {
     title: z.string().min(1),
     documentDate: z.string().optional(),
     notes: z.string().optional(),
+    resultStatus: z.enum(RESULT_STATUSES).optional(),
   }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   if (!req.file) return res.status(400).json({ error: "No file provided" });
@@ -58,10 +60,11 @@ documentsRouter.post("/", upload.single("file"), async (req, res) => {
       fileSizeBytes: req.file.size,
       uploadedById: req.currentUser!.id,
       notes: parsed.data.notes,
+      resultStatus: parsed.data.resultStatus,
     },
   });
 
-  await writeAudit({ req, userId: req.currentUser!.id, action: "UPLOAD_DOC", entityType: "MedicalDocument", entityId: doc.id, employeeId: employee.id, details: { category: doc.category, title: doc.title } });
+  await writeAudit({ req, userId: req.currentUser!.id, action: "UPLOAD_DOC", entityType: "MedicalDocument", entityId: doc.id, employeeId: employee.id, details: { category: doc.category, title: doc.title, resultStatus: doc.resultStatus } });
 
   res.status(201).json(doc);
 });

@@ -38,6 +38,17 @@ reportsRouter.get("/departments", async (_req, res) => {
   res.json(rows.map((r) => r.department).filter((d): d is string => !!d));
 });
 
+// ── Document categories in use (for the Lab/Diagnostic report's dynamic
+// category selector) ────────────────────────────────────────────────────
+reportsRouter.get("/document-categories", async (_req, res) => {
+  const rows = await prisma.medicalDocument.findMany({
+    distinct: ["category"],
+    select: { category: true },
+    orderBy: { category: "asc" },
+  });
+  res.json(rows.map((r) => r.category));
+});
+
 // ── APE Summary report (Word + Excel, year-over-year) ───────────────────
 // Split from the old single combined APE report into two independent
 // reports (Summary, Detailed) per an explicit product decision, applied

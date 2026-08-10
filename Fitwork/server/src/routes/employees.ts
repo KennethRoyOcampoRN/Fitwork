@@ -366,14 +366,13 @@ employeesRouter.get("/:id", async (req, res) => {
 
 employeesRouter.get("/:id/overview", async (req, res) => {
   const employeeId = req.params.id;
-  const [notes, meds, docs, apes, drugTests, preEmployments, labTests] = await Promise.all([
+  const [notes, meds, docs, apes, drugTests, preEmployments] = await Promise.all([
     prisma.clinicalNote.findMany({ where: { employeeId }, orderBy: { visitDateTime: "desc" }, take: 10, include: { author: { select: { fullName: true } } } }),
     prisma.medicationLog.findMany({ where: { employeeId }, orderBy: { dispensedAt: "desc" }, take: 10, include: { dispensedBy: { select: { fullName: true } } } }),
     prisma.medicalDocument.findMany({ where: { employeeId }, orderBy: { createdAt: "desc" }, take: 10, include: { uploadedBy: { select: { fullName: true } } } }),
     prisma.annualPhysicalExam.findMany({ where: { employeeId }, orderBy: { examYear: "desc" }, take: 3 }),
     prisma.drugTestResult.findMany({ where: { employeeId }, orderBy: { testDate: "desc" }, take: 3 }),
     prisma.preEmploymentExam.findMany({ where: { employeeId }, orderBy: { createdAt: "desc" }, take: 3 }),
-    prisma.labTestResult.findMany({ where: { employeeId }, orderBy: { datePerformed: "desc" }, take: 3 }),
   ]);
 
   // Each entry carries a `tab` so the client can navigate straight to the
@@ -421,13 +420,6 @@ employeesRouter.get("/:id/overview", async (req, res) => {
       label: `Pre-employment exam${p.fitnessClassification ? ` — ${p.fitnessClassification.replace(/_/g, " ")}` : ""}`,
       id: p.id,
       tab: "preemployment",
-    })),
-    ...labTests.map((t) => ({
-      type: "LAB_TEST",
-      date: t.datePerformed,
-      label: `${t.testType} lab test — ${t.resultStatus}`,
-      id: t.id,
-      tab: "labtest",
     })),
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

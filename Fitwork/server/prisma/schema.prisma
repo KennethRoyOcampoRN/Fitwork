@@ -61,7 +61,6 @@ model User {
   toothRecords      ToothRecord[]
   certificatesIssued MedicalCertificate[]
   standaloneCertificatesIssued CertificateVerificationRecord[]
-  labTestsOrdered    LabTestResult[]
 
   @@index([username])
 }
@@ -125,7 +124,6 @@ model Employee {
   drugTestResults   DrugTestResult[]
   preEmploymentExams PreEmploymentExam[]
   medicalCertificates MedicalCertificate[]
-  labTestResults    LabTestResult[]
 
   @@index([employeeCode])
   @@index([lastName, firstName])
@@ -295,6 +293,10 @@ model MedicalDocument {
   uploadedById     String
   uploadedBy       User     @relation(fields: [uploadedById], references: [id])
   notes            String?
+  // Optional clinical read on the uploaded file itself (e.g. a lab/imaging
+  // scan) — "NORMAL" | "ABNORMAL" | "PENDING", or unset for documents where
+  // a result status doesn't apply (certificates, clearances, etc).
+  resultStatus     String?
   isArchived       Boolean  @default(false)
   archiveReason    String?
   createdAt        DateTime @default(now())
@@ -366,39 +368,6 @@ model DrugTestResult {
   createdAt     DateTime  @default(now())
 
   @@index([employeeId, testDate])
-}
-
-// Admin-managed dropdown list for LabTestResult.testType — same
-// manageable-list convention as Company, kept as its own tiny table rather
-// than a fixed code list (unlike ILLNESS_CATEGORIES) since clinics
-// legitimately differ on which lab/diagnostic tests they order.
-model LabTestType {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-
-  @@index([name])
-}
-
-// A single lab/diagnostic test event — append-only like DrugTestResult, not
-// upsert-by-year like AnnualPhysicalExam (an employee may have any number
-// of lab tests over time).
-model LabTestResult {
-  id            String   @id @default(uuid())
-  employeeId    String
-  employee      Employee @relation(fields: [employeeId], references: [id])
-  testType      String
-  datePerformed DateTime
-  findings      String?
-  resultStatus  String
-  orderedById   String
-  orderedBy     User     @relation(fields: [orderedById], references: [id])
-  sourceType    String   @default("MANUAL")
-  createdAt     DateTime @default(now())
-
-  @@index([employeeId, datePerformed])
-  @@index([testType])
 }
 
 // Pre-employment screening — distinct from AnnualPhysicalExam (periodic/

@@ -10,7 +10,6 @@ import ApeTab from "../components/ApeTab";
 import DrugTestTab from "../components/DrugTestTab";
 import CertificateTab from "../components/CertificateTab";
 import PreEmploymentTab from "../components/PreEmploymentTab";
-import LabTestTab from "../components/LabTestTab";
 import LineChart from "../components/LineChart";
 import EmployeeAuditTab from "../components/EmployeeAuditTab";
 import StatTile from "../components/StatTile";
@@ -316,7 +315,7 @@ export default function EmployeeProfile() {
             [["overview", "Overview"]],
             [["doctor", "Doctor's Notes"], ["nurse", "Nurse's Notes"], ["dentist", "Dental"]],
             [["medications", "Medications"], ["documents", "Labs & Documents"], ["vitals", "Vitals"]],
-            [["ape", "Annual Physical Exams"], ["drugtest", "Drug Test"], ["labtest", "Lab Tests"], ["preemployment", "Pre-Employment"], ["certificates", "Medical Certificates"]],
+            [["ape", "Annual Physical Exams"], ["drugtest", "Drug Test"], ["preemployment", "Pre-Employment"], ["certificates", "Medical Certificates"]],
             ...(user?.role === "ADMIN" ? [[["audit", "Audit"]]] : []),
           ].map((group, i) => (
             <React.Fragment key={i}>
@@ -377,7 +376,6 @@ export default function EmployeeProfile() {
       {tab === "documents" && <DocumentsTab employeeId={employee.id} focusId={focusId} />}
       {tab === "ape" && <ApeTab employeeId={employee.id} focusId={focusId} />}
       {tab === "drugtest" && <DrugTestTab employeeId={employee.id} focusId={focusId} />}
-      {tab === "labtest" && <LabTestTab employeeId={employee.id} focusId={focusId} />}
       {tab === "preemployment" && <PreEmploymentTab employeeId={employee.id} focusId={focusId} />}
       {tab === "certificates" && (
         <CertificateTab

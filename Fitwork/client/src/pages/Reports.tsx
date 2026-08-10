@@ -32,6 +32,12 @@ function useDepartments() {
   return departments;
 }
 
+function useDocumentCategories() {
+  const [categories, setCategories] = useState<string[]>([]);
+  useEffect(() => { api.get<string[]>("/reports/document-categories").then(setCategories).catch(() => {}); }, []);
+  return categories;
+}
+
 function DepartmentSelect({ value, onChange, departments }: { value: string; onChange: (v: string) => void; departments: string[] }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} className="border rounded px-2 py-1 text-sm">
@@ -105,6 +111,68 @@ function MonthYearCsvReportSection({ endpoint, filenamePrefix, title, descriptio
   return (
     <ReportCard title={title} description={description}>
       <div className="flex flex-wrap gap-2 items-end mb-3">
+        <div>
+          <label className="block text-xs font-medium mb-1">Year</label>
+          <input type="number" value={year} onChange={(e) => setYear(e.target.value)} className="border rounded px-2 py-1 text-sm w-24" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1">Month</label>
+          <select value={month} onChange={(e) => setMonth(e.target.value)} className="border rounded px-2 py-1 text-sm">
+            <option value="">Whole year</option>
+            {MONTHS.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1">Department</label>
+          <DepartmentSelect value={department} onChange={setDepartment} departments={departments} />
+        </div>
+      </div>
+      <button onClick={download} disabled={busy} className="bg-clinic-600 text-white rounded px-4 py-1.5 text-sm disabled:opacity-50">
+        {busy ? "Preparing..." : "Download CSV"}
+      </button>
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+    </ReportCard>
+  );
+}
+
+// Like MonthYearCsvReportSection, but with an extra required Category
+// selector — Lab/Diagnostic documents are grouped by MedicalDocument
+// category (Labs & Documents), and the category dropdown is populated
+// dynamically from GET /reports/document-categories (categories actually
+// in use), same pattern as the Department dropdown.
+function LabDiagnosticReportSection({ departments, categories }: { departments: string[]; categories: string[] }) {
+  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [month, setMonth] = useState("");
+  const [department, setDepartment] = useState("");
+  const [category, setCategory] = useState("LABORATORY");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function download() {
+    setBusy(true);
+    setError(null);
+    const params = new URLSearchParams({ year, category });
+    if (month) params.set("month", month);
+    if (department) params.set("department", department);
+    const period = month ? `${year}-${month.padStart(2, "0")}` : year;
+    const err = await downloadFile(`/api/reports/lab-diagnostic-by-department/export.csv?${params}`, `lab-diagnostic-by-department-${category}-${period}.csv`);
+    setError(err);
+    setBusy(false);
+  }
+
+  return (
+    <ReportCard
+      title="Lab/Diagnostic Report per Month/Year/Department"
+      description="Counts of uploaded Labs & Documents by result status (Normal/Abnormal/Pending), cross-tabbed by department, for a selected category and month or year. CSV export."
+    >
+      <div className="flex flex-wrap gap-2 items-end mb-3">
+        <div>
+          <label className="block text-xs font-medium mb-1">Category</label>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="border rounded px-2 py-1 text-sm">
+            {categories.length === 0 && <option value="LABORATORY">LABORATORY</option>}
+            {categories.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
+          </select>
+        </div>
         <div>
           <label className="block text-xs font-medium mb-1">Year</label>
           <input type="number" value={year} onChange={(e) => setYear(e.target.value)} className="border rounded px-2 py-1 text-sm w-24" />
@@ -493,6 +561,7 @@ function CustomReportBuilderSection({ departments, companies }: { departments: s
 
 export default function Reports() {
   const departments = useDepartments();
+  const categories = useDocumentCategories();
   const companies = useCompanies();
 
   return (
@@ -543,11 +612,7 @@ export default function Reports() {
         title="Medications Dispensed per Department per Month/Year"
         description="Count of medications dispensed per department, for a selected month or year. CSV export."
       />
-      <MonthYearCsvReportSection
-        departments={departments} endpoint="lab-tests-by-department" filenamePrefix="lab-tests-by-department"
-        title="Lab/Diagnostic Test Report per Month/Year/Department"
-        description="Lab/diagnostic test counts cross-tabbed by test type and department, for a selected month or year. Includes matching results recorded on an Annual Physical Exam (e.g. chest X-ray, CBC) as separate rows tagged Source = APE, alongside standalone Lab Test entries. CSV export."
-      />
+      <LabDiagnosticReportSection departments={departments} categories={categories} />
     </div>
   );
 }
