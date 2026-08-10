@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+import ConfirmModal from "./ConfirmModal";
 import { IconArchiveBox } from "./icons";
 import LabelCombobox, { LabelComboboxHandle, LabelOption } from "./LabelCombobox";
 
@@ -47,6 +48,9 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [onlyUnlabeled, setOnlyUnlabeled] = useState(false);
   const [relabelDoc, setRelabelDoc] = useState<Doc | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<Doc | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [archiveBusy, setArchiveBusy] = useState(false);
 
   async function load() {
     const params = new URLSearchParams({ employeeId });
@@ -63,11 +67,21 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
     document.getElementById(`doc-${focusId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [focusId, docs]);
 
-  async function archive(doc: Doc) {
-    const reason = prompt(`Reason for archiving "${doc.title}" (required):`);
-    if (!reason || !reason.trim()) return;
-    await api.post(`/documents/${doc.id}/archive`, { reason });
-    await load();
+  function closeArchiveModal() {
+    setArchiveTarget(null);
+    setArchiveReason("");
+  }
+
+  async function archive() {
+    if (!archiveTarget || !archiveReason.trim()) return;
+    setArchiveBusy(true);
+    try {
+      await api.post(`/documents/${archiveTarget.id}/archive`, { reason: archiveReason.trim() });
+      closeArchiveModal();
+      await load();
+    } finally {
+      setArchiveBusy(false);
+    }
   }
 
   const preview = docs.find((d) => d.id === previewId);
@@ -122,7 +136,7 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
               </div>
               {!d.isArchived && (
                 <button
-                  onClick={() => archive(d)}
+                  onClick={() => setArchiveTarget(d)}
                   className="inline-flex items-center gap-1 self-start shrink-0 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
                 >
                   <IconArchiveBox className="w-3 h-3" /> Archive
@@ -147,6 +161,26 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
 
       {relabelDoc && (
         <RelabelModal doc={relabelDoc} onClose={() => setRelabelDoc(null)} onRelabeled={load} />
+      )}
+
+      {archiveTarget && (
+        <ConfirmModal
+          title={`Archive "${archiveTarget.title}"?`}
+          confirmLabel={archiveBusy ? "Archiving..." : "Archive"}
+          confirmDisabled={!archiveReason.trim()}
+          busy={archiveBusy}
+          onConfirm={archive}
+          onCancel={closeArchiveModal}
+        >
+          <label className="block text-sm font-medium mb-1">Reason for archiving (required)</label>
+          <textarea
+            value={archiveReason}
+            onChange={(e) => setArchiveReason(e.target.value)}
+            rows={2}
+            className="w-full border rounded px-2 py-1 text-sm"
+            autoFocus
+          />
+        </ConfirmModal>
       )}
 
       {preview && (

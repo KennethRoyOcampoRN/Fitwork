@@ -15,6 +15,7 @@ import EmployeeAuditTab from "../components/EmployeeAuditTab";
 import StatTile from "../components/StatTile";
 import PermanentDeleteButton from "../components/PermanentDeleteButton";
 import EmployeeExportModal from "../components/EmployeeExportModal";
+import ConfirmModal from "../components/ConfirmModal";
 import FolderTabs from "../components/FolderTabs";
 import { IconHeartPulse, IconGauge, IconDroplet, IconRuler, IconCalendar, IconUser, IconBuilding, IconBriefcase, IconTag, IconDownload, IconEdit, IconArchiveBox, IconTrash } from "../components/icons";
 import { useAuth } from "../lib/auth";
@@ -100,6 +101,11 @@ export default function EmployeeProfile() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [archiveBusy, setArchiveBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const tab = searchParams.get("tab") || "overview";
   const focusId = searchParams.get("focus");
@@ -139,10 +145,11 @@ export default function EmployeeProfile() {
 
   async function archive() {
     if (!employee) return;
-    const reason = prompt(`Reason for archiving ${employee.lastName}, ${employee.firstName}'s record (optional):`) ?? undefined;
     setArchiveBusy(true);
     try {
-      await api.post(`/employees/${employee.id}/archive`, { reason: reason || undefined });
+      await api.post(`/employees/${employee.id}/archive`, { reason: archiveReason.trim() || undefined });
+      setShowArchiveModal(false);
+      setArchiveReason("");
       await load();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Could not archive employee");
@@ -167,21 +174,16 @@ export default function EmployeeProfile() {
   // Permanent delete is for correcting genuine mistakes (duplicate/wrongly
   // created records) only — reserved for ADMIN, and the server independently
   // re-validates both the confirmation text and that no clinical history
-  // exists, so this client-side prompt is convenience, not the real guard.
+  // exists, so this client-side check is convenience, not the real guard.
   async function deletePermanently() {
-    if (!employee) return;
-    const confirmText = prompt(
-      `This permanently deletes ${employee.lastName}, ${employee.firstName} (#${employee.employeeCode}) and cannot be undone.\n\n` +
-      `This only works if the record has no clinical notes, medications, documents, vitals, or APE records attached — otherwise archive it instead.\n\n` +
-      `Type the employee code or full name to confirm:`
-    );
-    if (!confirmText) return;
+    if (!employee || !deleteConfirmText.trim()) return;
     setDeleteBusy(true);
+    setDeleteError(null);
     try {
-      await api.delete(`/employees/${employee.id}`, { confirmText });
+      await api.delete(`/employees/${employee.id}`, { confirmText: deleteConfirmText.trim() });
       navigate("/search", { replace: true });
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not delete employee");
+      setDeleteError(err instanceof ApiError ? err.message : "Could not delete employee");
     } finally {
       setDeleteBusy(false);
     }
@@ -288,7 +290,7 @@ export default function EmployeeProfile() {
             )}
             {canEditEmployee && employee.isActive && (
               <button
-                onClick={archive}
+                onClick={() => setShowArchiveModal(true)}
                 disabled={archiveBusy}
                 className="inline-flex items-center gap-1.5 border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
               >
@@ -302,7 +304,7 @@ export default function EmployeeProfile() {
                     an accidental click. */}
                 <div className="w-px self-stretch bg-gray-200" />
                 <button
-                  onClick={deletePermanently}
+                  onClick={() => setShowDeleteModal(true)}
                   disabled={deleteBusy}
                   className="ml-1 inline-flex items-center gap-1.5 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
                 >
@@ -404,6 +406,58 @@ export default function EmployeeProfile() {
           employeeCode={employee.employeeCode}
           onClose={() => setShowExportModal(false)}
         />
+      )}
+
+      {showArchiveModal && (
+        <ConfirmModal
+          title={`Archive ${employee.lastName}, ${employee.firstName}'s record?`}
+          confirmLabel={archiveBusy ? "Archiving..." : "Archive"}
+          busy={archiveBusy}
+          onConfirm={archive}
+          onCancel={() => { setShowArchiveModal(false); setArchiveReason(""); }}
+        >
+          <p className="text-sm text-gray-700 mb-3">
+            The record is hidden from search and default lists, but its clinical history stays intact and it can be
+            restored at any time.
+          </p>
+          <label className="block text-sm font-medium mb-1">Reason for archiving (optional)</label>
+          <textarea
+            value={archiveReason}
+            onChange={(e) => setArchiveReason(e.target.value)}
+            rows={2}
+            className="w-full border rounded px-2 py-1 text-sm"
+            autoFocus
+          />
+        </ConfirmModal>
+      )}
+
+      {showDeleteModal && (
+        <ConfirmModal
+          title="Permanently delete this employee?"
+          danger
+          confirmLabel={deleteBusy ? "Deleting..." : "Delete"}
+          confirmDisabled={!deleteConfirmText.trim()}
+          busy={deleteBusy}
+          onConfirm={deletePermanently}
+          onCancel={() => { setShowDeleteModal(false); setDeleteConfirmText(""); setDeleteError(null); }}
+        >
+          <p className="text-sm text-gray-700 mb-3">
+            This permanently deletes {employee.lastName}, {employee.firstName} (#{employee.employeeCode}) and cannot
+            be undone.
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            This only works if the record has no clinical notes, medications, documents, vitals, or APE records
+            attached — otherwise archive it instead.
+          </p>
+          <label className="block text-sm font-medium mb-1">Type the employee code or full name to confirm</label>
+          <input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            className="w-full border rounded px-2 py-1 text-sm mb-2"
+            autoFocus
+          />
+          {deleteError && <p className="text-xs text-red-600 mb-2">{deleteError}</p>}
+        </ConfirmModal>
       )}
     </div>
   );

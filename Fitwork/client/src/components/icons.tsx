@@ -249,3 +249,13 @@ export function IconTrash({ className = base }: IconProps) {
     </svg>
   );
 }
+
+export function IconAlertTriangle({ className = base }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M10.6 3.7 2.2 18a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3L13.4 3.7a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4.5" />
+      <circle cx="12" cy="17" r="0.1" />
+    </svg>
+  );
+}

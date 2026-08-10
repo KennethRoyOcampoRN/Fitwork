@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+import ConfirmModal from "./ConfirmModal";
 import { IconArchiveBox } from "./icons";
 
 interface MedLog {
@@ -27,6 +28,9 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
   const [logs, setLogs] = useState<MedLog[]>([]);
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<MedLog | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [archiveBusy, setArchiveBusy] = useState(false);
 
   async function load() {
     setLogs(await api.get<MedLog[]>(`/medications?employeeId=${employeeId}`));
@@ -51,11 +55,21 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
     }
   }
 
-  async function archive(log: MedLog) {
-    const reason = prompt(`Reason for archiving "${log.drugName}" entry (required):`);
-    if (!reason || !reason.trim()) return;
-    await api.post(`/medications/${log.id}/archive`, { reason });
-    await load();
+  function closeArchiveModal() {
+    setArchiveTarget(null);
+    setArchiveReason("");
+  }
+
+  async function archive() {
+    if (!archiveTarget || !archiveReason.trim()) return;
+    setArchiveBusy(true);
+    try {
+      await api.post(`/medications/${archiveTarget.id}/archive`, { reason: archiveReason.trim() });
+      closeArchiveModal();
+      await load();
+    } finally {
+      setArchiveBusy(false);
+    }
   }
 
   return (
@@ -92,7 +106,7 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
                   <div className="flex flex-col items-start gap-1">
                     {!l.isArchived && (
                       <button
-                        onClick={() => archive(l)}
+                        onClick={() => setArchiveTarget(l)}
                         className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
                       >
                         <IconArchiveBox className="w-3 h-3" /> Archive
@@ -111,6 +125,26 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
           </tbody>
         </table>
       </div>
+
+      {archiveTarget && (
+        <ConfirmModal
+          title={`Archive "${archiveTarget.drugName}" entry?`}
+          confirmLabel={archiveBusy ? "Archiving..." : "Archive"}
+          confirmDisabled={!archiveReason.trim()}
+          busy={archiveBusy}
+          onConfirm={archive}
+          onCancel={closeArchiveModal}
+        >
+          <label className="block text-sm font-medium mb-1">Reason for archiving (required)</label>
+          <textarea
+            value={archiveReason}
+            onChange={(e) => setArchiveReason(e.target.value)}
+            rows={2}
+            className="w-full border rounded px-2 py-1 text-sm"
+            autoFocus
+          />
+        </ConfirmModal>
+      )}
     </div>
   );
 }

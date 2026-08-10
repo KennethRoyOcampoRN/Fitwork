@@ -4,6 +4,7 @@ import { useAuth } from "../lib/auth";
 import { ClinicalNote, ILLNESS_CATEGORY_LABEL, NOTE_FIELDS_BY_TYPE, NOTE_TYPE_LABEL, NoteFieldKey } from "../lib/noteTypes";
 import EditCountdown from "./EditCountdown";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+import ConfirmModal from "./ConfirmModal";
 
 export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onChanged: () => void }) {
   const { user } = useAuth();
@@ -11,6 +12,9 @@ export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onCh
   const [addendumBody, setAddendumBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showVoidModal, setShowVoidModal] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
+  const [voidError, setVoidError] = useState<string | null>(null);
 
   const isAuthor = user?.id === note.authorId;
   const isEditable = isAuthor && note.editableUntil && new Date(note.editableUntil) > new Date() && note.status === "FINAL";
@@ -34,14 +38,16 @@ export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onCh
   }
 
   async function doVoid() {
-    const reason = prompt("Reason for voiding this note (required):");
-    if (!reason || !reason.trim()) return;
+    if (!voidReason.trim()) return;
     setBusy(true);
+    setVoidError(null);
     try {
-      await api.post(`/notes/${note.id}/void`, { reason });
+      await api.post(`/notes/${note.id}/void`, { reason: voidReason.trim() });
+      setShowVoidModal(false);
+      setVoidReason("");
       onChanged();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not void note");
+      setVoidError(err instanceof ApiError ? err.message : "Could not void note");
     } finally {
       setBusy(false);
     }
@@ -62,7 +68,7 @@ export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onCh
           {isEditable && <button onClick={() => setEditing((e) => !e)} className="text-xs text-clinic-300 underline">{editing ? "Cancel" : "Edit"}</button>}
           {canVoid && !editing && (
             <button
-              onClick={doVoid}
+              onClick={() => setShowVoidModal(true)}
               className="bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors"
             >
               Void
@@ -120,6 +126,31 @@ export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onCh
         </form>
       )}
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+
+      {showVoidModal && (
+        <ConfirmModal
+          title="Void this note?"
+          danger
+          confirmLabel={busy ? "Voiding..." : "Void"}
+          confirmDisabled={!voidReason.trim()}
+          busy={busy}
+          onConfirm={doVoid}
+          onCancel={() => { setShowVoidModal(false); setVoidReason(""); setVoidError(null); }}
+        >
+          <p className="text-sm text-gray-700 mb-3">
+            The note stays visible but is marked voided and struck through — this doesn't delete it.
+          </p>
+          <label className="block text-sm font-medium mb-1">Reason for voiding (required)</label>
+          <textarea
+            value={voidReason}
+            onChange={(e) => setVoidReason(e.target.value)}
+            rows={2}
+            className="w-full border rounded px-2 py-1 text-sm mb-2"
+            autoFocus
+          />
+          {voidError && <p className="text-xs text-red-600 mb-2">{voidError}</p>}
+        </ConfirmModal>
+      )}
     </div>
   );
 }
