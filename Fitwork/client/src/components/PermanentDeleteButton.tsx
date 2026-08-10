@@ -66,7 +66,7 @@ export default function PermanentDeleteButton({
             <div className="flex justify-end gap-2">
               <button onClick={() => setOpen(false)} disabled={busy} className="px-4 py-2 text-sm">Cancel</button>
               <button onClick={confirm} disabled={busy} className="bg-red-700 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
-                {busy ? "Deleting..." : "Delete permanently"}
+                {busy ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

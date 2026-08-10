@@ -89,7 +89,7 @@ export default function AdminArchivedEmployees() {
                     disabled={busyId === e.id}
                     className="inline-flex items-center gap-1 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50"
                   >
-                    <IconTrash className="w-3 h-3" /> Delete permanently
+                    <IconTrash className="w-3 h-3" /> Delete
                   </button>
                 </td>
               </tr>

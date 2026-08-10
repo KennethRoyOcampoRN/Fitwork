@@ -114,23 +114,27 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
             <div className="text-xs text-gray-500 mt-1">{d.originalFilename} · {formatBytes(d.fileSizeBytes)}</div>
             <div className="text-xs text-gray-400">{d.documentDate ? new Date(d.documentDate).toLocaleDateString() : new Date(d.createdAt).toLocaleDateString()} · {d.uploadedBy.fullName}</div>
             {d.isArchived && <div className="text-xs text-red-600 mt-1">Reason: {d.archiveReason}</div>}
-            <div className="flex flex-wrap items-center gap-3 mt-2">
-              <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-300 underline">Preview</button>
-              <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
-              {d.labelId && <button onClick={() => setRelabelDoc(d)} className="text-xs text-clinic-300 underline">Change label</button>}
+            <div className="flex flex-col gap-2 mt-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-300 underline">Preview</button>
+                <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
+                {d.labelId && <button onClick={() => setRelabelDoc(d)} className="text-xs text-clinic-300 underline">Change label</button>}
+              </div>
               {!d.isArchived && (
                 <button
                   onClick={() => archive(d)}
-                  className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                  className="inline-flex items-center gap-1 self-start shrink-0 whitespace-nowrap border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
                 >
                   <IconArchiveBox className="w-3 h-3" /> Archive
                 </button>
               )}
               {user?.role === "ADMIN" && (
-                <PermanentDeleteButton
-                  description={`${d.category.replace(/_/g, " ")} document "${d.title}" (${d.originalFilename}), uploaded by ${d.uploadedBy.fullName}.`}
-                  onDelete={async (reason) => { await api.delete(`/documents/${d.id}`, { reason }); await load(); }}
-                />
+                <div className="self-start">
+                  <PermanentDeleteButton
+                    description={`${d.category.replace(/_/g, " ")} document "${d.title}" (${d.originalFilename}), uploaded by ${d.uploadedBy.fullName}.`}
+                    onDelete={async (reason) => { await api.delete(`/documents/${d.id}`, { reason }); await load(); }}
+                  />
+                </div>
               )}
             </div>
           </div>
