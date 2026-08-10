@@ -47,9 +47,12 @@ function DepartmentSelect({ value, onChange, departments }: { value: string; onC
   );
 }
 
+// No longer its own bordered card — every report now renders inside the
+// single tabbed panel in Reports() below, so this is just the heading +
+// description + filters/buttons, not a second nested box.
 function ReportCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border rounded-xl p-4">
+    <div>
       <h2 className="font-medium mb-1">{title}</h2>
       <p className="text-xs text-gray-500 mb-3">{description}</p>
       {children}
@@ -559,10 +562,194 @@ function CustomReportBuilderSection({ departments, companies }: { departments: s
   );
 }
 
+// Folder/sheet-tab style tab strip, reused for both the top-level category
+// row and each category's sub-tab row. Deliberately not a flex-1/equal-
+// width or truncating layout — each tab is sized to its own label (plain
+// inline button sizing) and the strip just wraps onto additional rows via
+// flex-wrap when it runs out of horizontal space, rather than shrinking,
+// squishing, or scrolling. `size` swaps a couple of classes for the
+// slightly smaller/lighter sub-tab row so the two levels stay visually
+// distinguishable at a glance.
+function FolderTabs({ tabs, active, onChange, size = "lg" }: {
+  tabs: { key: string; label: string }[]; active: string; onChange: (key: string) => void; size?: "lg" | "sm";
+}) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          onClick={() => onChange(t.key)}
+          className={`rounded-t-lg font-medium whitespace-nowrap transition-colors ${
+            size === "lg" ? "px-4 py-2 text-sm" : "px-3 py-1.5 text-xs"
+          } ${
+            active === t.key
+              ? "bg-clinic-600 shadow-sm"
+              : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+interface ReportEntry {
+  key: string;
+  label: string;
+  render: (ctx: { departments: string[]; categories: string[]; companies: ReturnType<typeof useCompanies> }) => React.ReactNode;
+}
+
+interface ReportCategory {
+  key: string;
+  label: string;
+  reports: ReportEntry[];
+}
+
+// Every report the page can show, grouped the way a nurse/admin would look
+// for them (by record type) rather than as one long undifferentiated
+// stack. A category with only one report skips its own sub-tab row
+// entirely (see the render logic below) — a single sub-tab next to nothing
+// else to choose between isn't worth the extra row.
+const REPORT_CATEGORIES: ReportCategory[] = [
+  {
+    key: "ape", label: "APE",
+    reports: [
+      {
+        key: "summary", label: "Summary",
+        render: ({ departments, companies }) => (
+          <YearReportSection
+            departments={departments} companies={companies} kind="ape-summary" yearParam="examYear"
+            title="APE Summary Report"
+            description="Counts by fitness classification and department, editable Word document or data-only Excel. Optionally compare against prior year(s)."
+          />
+        ),
+      },
+      {
+        key: "detailed", label: "Detailed",
+        render: ({ departments, companies }) => (
+          <YearReportSection
+            departments={departments} companies={companies} kind="ape-detailed" yearParam="examYear"
+            title="APE Detailed Report"
+            description="Full per-employee exam detail, editable Word document or data-only Excel. Optionally compare against prior year(s)."
+          />
+        ),
+      },
+      {
+        key: "comprehensive", label: "Comprehensive",
+        render: ({ departments, companies }) => <ApeComprehensiveSection departments={departments} companies={companies} />,
+      },
+    ],
+  },
+  {
+    key: "dental", label: "Dental",
+    reports: [
+      {
+        key: "summary", label: "Summary",
+        render: ({ departments, companies }) => (
+          <YearReportSection
+            departments={departments} companies={companies} kind="dental-summary" yearParam="year"
+            title="Dental Summary Report"
+            description="Visit counts by disposition and department, sourced from dentist visit notes. Editable Word document or data-only Excel."
+          />
+        ),
+      },
+      {
+        key: "detailed", label: "Detailed",
+        render: ({ departments, companies }) => (
+          <YearReportSection
+            departments={departments} companies={companies} kind="dental-detailed" yearParam="year"
+            title="Dental Detailed Report"
+            description="Full per-visit dental detail plus a current tooth-chart snapshot (reference only, no history). Editable Word document or data-only Excel."
+          />
+        ),
+      },
+    ],
+  },
+  {
+    key: "illness", label: "Illness",
+    reports: [
+      {
+        key: "by-department", label: "By Department",
+        render: ({ departments, companies }) => <IllnessByDepartmentSection departments={departments} companies={companies} />,
+      },
+      {
+        key: "by-age", label: "By Age",
+        render: ({ departments, companies }) => <IllnessByAgeSection departments={departments} companies={companies} />,
+      },
+      {
+        key: "per-month", label: "Per Month/Year",
+        render: ({ departments }) => (
+          <MonthYearCsvReportSection
+            departments={departments} endpoint="illness-by-month" filenamePrefix="illness-by-month"
+            title="Illness per Month/Year"
+            description="Counts of each illness/condition category for a selected month or year. CSV export."
+          />
+        ),
+      },
+      {
+        key: "per-department-month", label: "Per Department/Month/Year",
+        render: ({ departments }) => (
+          <MonthYearCsvReportSection
+            departments={departments} endpoint="illness-by-department-month" filenamePrefix="illness-by-department"
+            title="Illness per Department per Month/Year"
+            description="Illness/condition category counts cross-tabbed by department, for a selected month or year. CSV export."
+          />
+        ),
+      },
+    ],
+  },
+  {
+    key: "medications", label: "Medications",
+    reports: [
+      {
+        key: "by-department-month", label: "Per Department/Month/Year",
+        render: ({ departments }) => (
+          <MonthYearCsvReportSection
+            departments={departments} endpoint="medications-by-department" filenamePrefix="medications-by-department"
+            title="Medications Dispensed per Department per Month/Year"
+            description="Count of medications dispensed per department, for a selected month or year. CSV export."
+          />
+        ),
+      },
+    ],
+  },
+  {
+    key: "labs", label: "Labs & Diagnostics",
+    reports: [
+      {
+        key: "by-department-month", label: "Per Department/Month/Year",
+        render: ({ departments, categories }) => <LabDiagnosticReportSection departments={departments} categories={categories} />,
+      },
+    ],
+  },
+  {
+    key: "custom", label: "Custom Report Builder",
+    reports: [
+      {
+        key: "builder", label: "Custom Report Builder",
+        render: ({ departments, companies }) => <CustomReportBuilderSection departments={departments} companies={companies} />,
+      },
+    ],
+  },
+];
+
 export default function Reports() {
   const departments = useDepartments();
   const categories = useDocumentCategories();
   const companies = useCompanies();
+
+  const [activeCategoryKey, setActiveCategoryKey] = useState(REPORT_CATEGORIES[0].key);
+  const [activeReportKey, setActiveReportKey] = useState(REPORT_CATEGORIES[0].reports[0].key);
+
+  const activeCategory = REPORT_CATEGORIES.find((c) => c.key === activeCategoryKey) || REPORT_CATEGORIES[0];
+  const activeReport = activeCategory.reports.find((r) => r.key === activeReportKey) || activeCategory.reports[0];
+
+  function selectCategory(key: string) {
+    setActiveCategoryKey(key);
+    const cat = REPORT_CATEGORIES.find((c) => c.key === key);
+    setActiveReportKey(cat ? cat.reports[0].key : "");
+  }
 
   return (
     <div className="space-y-4">
@@ -573,46 +760,31 @@ export default function Reports() {
         workbooks; the Custom Report Builder exports a combined PDF or a data-only Excel workbook; the APE
         Comprehensive report is Word-only, since it's defined by its narrative and charts rather than raw data.
       </p>
-      <YearReportSection
-        departments={departments} companies={companies} kind="ape-summary" yearParam="examYear"
-        title="APE Summary Report"
-        description="Counts by fitness classification and department, editable Word document or data-only Excel. Optionally compare against prior year(s)."
+
+      <FolderTabs
+        tabs={REPORT_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))}
+        active={activeCategoryKey}
+        onChange={selectCategory}
       />
-      <YearReportSection
-        departments={departments} companies={companies} kind="ape-detailed" yearParam="examYear"
-        title="APE Detailed Report"
-        description="Full per-employee exam detail, editable Word document or data-only Excel. Optionally compare against prior year(s)."
-      />
-      <ApeComprehensiveSection departments={departments} companies={companies} />
-      <YearReportSection
-        departments={departments} companies={companies} kind="dental-summary" yearParam="year"
-        title="Dental Summary Report"
-        description="Visit counts by disposition and department, sourced from dentist visit notes. Editable Word document or data-only Excel."
-      />
-      <YearReportSection
-        departments={departments} companies={companies} kind="dental-detailed" yearParam="year"
-        title="Dental Detailed Report"
-        description="Full per-visit dental detail plus a current tooth-chart snapshot (reference only, no history). Editable Word document or data-only Excel."
-      />
-      <IllnessByDepartmentSection departments={departments} companies={companies} />
-      <IllnessByAgeSection departments={departments} companies={companies} />
-      <CustomReportBuilderSection departments={departments} companies={companies} />
-      <MonthYearCsvReportSection
-        departments={departments} endpoint="illness-by-month" filenamePrefix="illness-by-month"
-        title="Illness per Month/Year"
-        description="Counts of each illness/condition category for a selected month or year. CSV export."
-      />
-      <MonthYearCsvReportSection
-        departments={departments} endpoint="illness-by-department-month" filenamePrefix="illness-by-department"
-        title="Illness per Department per Month/Year"
-        description="Illness/condition category counts cross-tabbed by department, for a selected month or year. CSV export."
-      />
-      <MonthYearCsvReportSection
-        departments={departments} endpoint="medications-by-department" filenamePrefix="medications-by-department"
-        title="Medications Dispensed per Department per Month/Year"
-        description="Count of medications dispensed per department, for a selected month or year. CSV export."
-      />
-      <LabDiagnosticReportSection departments={departments} categories={categories} />
+
+      {/* The panel below the tabs holds exactly one report at a time — the
+          page's height is bounded by whichever single report is showing,
+          not by every report stacked together, so it stays put as more
+          report types get added over time (each just becomes another tab,
+          not another few hundred pixels of permanently-visible page). */}
+      <div className="bg-white border rounded-b-xl rounded-tr-xl -mt-1 p-4">
+        {activeCategory.reports.length > 1 && (
+          <div className="mb-4">
+            <FolderTabs
+              tabs={activeCategory.reports.map((r) => ({ key: r.key, label: r.label }))}
+              active={activeReportKey}
+              onChange={setActiveReportKey}
+              size="sm"
+            />
+          </div>
+        )}
+        {activeReport.render({ departments, categories, companies })}
+      </div>
     </div>
   );
 }
