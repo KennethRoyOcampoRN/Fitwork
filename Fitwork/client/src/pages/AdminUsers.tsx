@@ -81,7 +81,14 @@ export default function AdminUsers() {
                   <td className="p-2">{u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "Never"}</td>
                   <td className="p-2">{u.isActive ? <span className="text-green-700">Active</span> : <span className="text-gray-400">Inactive</span>}</td>
                   <td className="p-2 space-x-2 whitespace-nowrap">
-                    <button onClick={() => toggleActive(u)} className="text-xs text-clinic-300 underline">{u.isActive ? "Deactivate" : "Reactivate"}</button>
+                    <button
+                      onClick={() => toggleActive(u)}
+                      className={u.isActive
+                        ? "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                        : "text-xs text-clinic-300 underline"}
+                    >
+                      {u.isActive ? "Deactivate" : "Reactivate"}
+                    </button>
                     <button onClick={() => resetPassword(u)} className="text-xs text-clinic-300 underline">Reset password</button>
                   </td>
                 </tr>

@@ -15,6 +15,7 @@ import EmployeeAuditTab from "../components/EmployeeAuditTab";
 import StatTile from "../components/StatTile";
 import PermanentDeleteButton from "../components/PermanentDeleteButton";
 import EmployeeExportModal from "../components/EmployeeExportModal";
+import FolderTabs from "../components/FolderTabs";
 import { IconHeartPulse, IconGauge, IconDroplet, IconRuler, IconCalendar, IconUser, IconBuilding, IconBriefcase, IconTag, IconDownload, IconEdit, IconArchiveBox, IconTrash } from "../components/icons";
 import { useAuth } from "../lib/auth";
 
@@ -313,38 +314,29 @@ export default function EmployeeProfile() {
         </div>
       </div>
 
-      {/* Grouped tab bar: related record types cluster together, separated
-          by a thin divider (the same divider style used for the destructive
-          action above), rather than one long strip. Wraps onto additional
-          rows as tabs are added instead of scrolling — a wrapped divider
-          just falls to whichever row it lands on, which reads fine in
-          practice. Active state mirrors the sidebar's active nav item
-          (solid clinic-600 fill) so "selected" is unambiguous at a glance. */}
-      <div className="bg-white border rounded-xl p-2 mb-4">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {[
-            [["overview", "Overview"]],
-            [["doctor", "Doctor's Notes"], ["nurse", "Nurse's Notes"], ["dentist", "Dental"]],
-            [["medications", "Medications"], ["documents", "Labs & Documents"], ["vitals", "Vitals"]],
-            [["ape", "Annual Physical Exams"], ["drugtest", "Drug Test"], ["preemployment", "Pre-Employment"], ["certificates", "Medical Certificates"]],
-            ...(user?.role === "ADMIN" ? [[["audit", "Audit"]]] : []),
-          ].map((group, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <div className="w-px self-stretch bg-gray-200 mx-1" />}
-              {group.map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => goToTab(key)}
-                  className={`px-3.5 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                    tab === key ? "bg-clinic-600 text-white shadow-sm" : "text-gray-600 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </React.Fragment>
-          ))}
-        </div>
+      {/* Same folder-tab component as the Reports and Admin tab bars (see
+          components/FolderTabs.tsx) — sized to each label and wrapping
+          onto additional rows as tabs are added, rather than the previous
+          grouped-with-dividers strip. */}
+      <div className="mb-4">
+        <FolderTabs
+          tabs={[
+            { key: "overview", label: "Overview" },
+            { key: "doctor", label: "Doctor's Notes" },
+            { key: "nurse", label: "Nurse's Notes" },
+            { key: "dentist", label: "Dental" },
+            { key: "medications", label: "Medications" },
+            { key: "documents", label: "Labs & Documents" },
+            { key: "vitals", label: "Vitals" },
+            { key: "ape", label: "Annual Physical Exams" },
+            { key: "drugtest", label: "Drug Test" },
+            { key: "preemployment", label: "Pre-Employment" },
+            { key: "certificates", label: "Medical Certificates" },
+            ...(user?.role === "ADMIN" ? [{ key: "audit", label: "Audit" }] : []),
+          ]}
+          active={tab}
+          onChange={goToTab}
+        />
       </div>
 
       {tab === "overview" && (

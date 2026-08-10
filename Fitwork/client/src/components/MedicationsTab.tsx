@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+import { IconArchiveBox } from "./icons";
 
 interface MedLog {
   id: string;
@@ -88,7 +89,14 @@ export default function MedicationsTab({ employeeId, focusId }: { employeeId: st
                 <td className="p-2">{[l.strength, l.dosageForm, l.route, l.frequency].filter(Boolean).join(" · ") || "—"}</td>
                 <td className="p-2">{l.dispensedBy.fullName}</td>
                 <td className="p-2 space-x-2 whitespace-nowrap">
-                  {!l.isArchived && <button onClick={() => archive(l)} className="text-xs text-red-600 underline">Archive</button>}
+                  {!l.isArchived && (
+                    <button
+                      onClick={() => archive(l)}
+                      className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                    >
+                      <IconArchiveBox className="w-3 h-3" /> Archive
+                    </button>
+                  )}
                   {user?.role === "ADMIN" && (
                     <PermanentDeleteButton
                       description={`Medication entry "${l.drugName}" dispensed ${new Date(l.dispensedAt).toLocaleString()} by ${l.dispensedBy.fullName}.`}

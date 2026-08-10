@@ -275,7 +275,12 @@ export default function AdminBranding() {
           <button type="submit" disabled={busy} className="bg-clinic-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
             {busy ? "Saving..." : "Save branding"}
           </button>
-          <button type="button" onClick={resetToDefaults} disabled={busy} className="text-sm text-red-600 underline disabled:opacity-50">
+          <button
+            type="button"
+            onClick={resetToDefaults}
+            disabled={busy}
+            className="border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+          >
             Reset to defaults
           </button>
         </div>

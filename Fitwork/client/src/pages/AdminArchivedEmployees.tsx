@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
+import { IconTrash } from "../components/icons";
 
 interface ArchivedEmployee {
   id: string;
@@ -83,8 +84,12 @@ export default function AdminArchivedEmployees() {
                   <button onClick={() => restore(e.id)} disabled={busyId === e.id} className="text-xs text-clinic-300 underline disabled:opacity-50">
                     {busyId === e.id ? "Restoring..." : "Restore"}
                   </button>
-                  <button onClick={() => deletePermanently(e)} disabled={busyId === e.id} className="text-xs text-red-800 underline disabled:opacity-50">
-                    Delete permanently
+                  <button
+                    onClick={() => deletePermanently(e)}
+                    disabled={busyId === e.id}
+                    className="inline-flex items-center gap-1 bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    <IconTrash className="w-3 h-3" /> Delete permanently
                   </button>
                 </td>
               </tr>

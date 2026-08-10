@@ -60,7 +60,14 @@ export default function NoteCard({ note, onChanged }: { note: ClinicalNote; onCh
         <div className="flex items-center gap-2">
           {isEditable && <EditCountdown editableUntil={note.editableUntil!} />}
           {isEditable && <button onClick={() => setEditing((e) => !e)} className="text-xs text-clinic-300 underline">{editing ? "Cancel" : "Edit"}</button>}
-          {canVoid && !editing && <button onClick={doVoid} className="text-xs text-red-600 underline">Void</button>}
+          {canVoid && !editing && (
+            <button
+              onClick={doVoid}
+              className="bg-[#D33B3B] hover:bg-[#B93232] text-white rounded px-2 py-1 text-xs font-medium transition-colors"
+            >
+              Void
+            </button>
+          )}
           {user?.role === "ADMIN" && (
             <PermanentDeleteButton
               description={`${NOTE_TYPE_LABEL[note.noteType] || "Note"} dated ${new Date(note.visitDateTime).toLocaleString()} for this employee, authored by ${note.author.fullName}.`}

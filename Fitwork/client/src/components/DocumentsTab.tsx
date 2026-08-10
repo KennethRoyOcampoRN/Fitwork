@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import PermanentDeleteButton from "./PermanentDeleteButton";
+import { IconArchiveBox } from "./icons";
 import LabelCombobox, { LabelComboboxHandle, LabelOption } from "./LabelCombobox";
 
 interface Doc {
@@ -117,7 +118,14 @@ export default function DocumentsTab({ employeeId, focusId }: { employeeId: stri
               <button onClick={() => setPreviewId(d.id)} className="text-xs text-clinic-300 underline">Preview</button>
               <a href={`/api/documents/${d.id}/file`} download={d.originalFilename} className="text-xs text-clinic-300 underline">Download</a>
               {d.labelId && <button onClick={() => setRelabelDoc(d)} className="text-xs text-clinic-300 underline">Change label</button>}
-              {!d.isArchived && <button onClick={() => archive(d)} className="text-xs text-red-600 underline">Archive</button>}
+              {!d.isArchived && (
+                <button
+                  onClick={() => archive(d)}
+                  className="inline-flex items-center gap-1 border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded px-2 py-1 text-xs font-medium transition-colors"
+                >
+                  <IconArchiveBox className="w-3 h-3" /> Archive
+                </button>
+              )}
               {user?.role === "ADMIN" && (
                 <PermanentDeleteButton
                   description={`${d.category.replace(/_/g, " ")} document "${d.title}" (${d.originalFilename}), uploaded by ${d.uploadedBy.fullName}.`}
