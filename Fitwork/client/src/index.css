@@ -107,6 +107,23 @@ body {
 .bg-gray-50 { background-color: rgba(255, 255, 255, 0.04); }
 .bg-gray-100 { background-color: rgba(255, 255, 255, 0.08); }
 .bg-gray-200 { background-color: rgba(255, 255, 255, 0.14); }
+/* Tailwind's `hover:` variant compiles to its own selector
+   (`.hover\:bg-gray-50:hover`), separate from the plain `.bg-gray-50`
+   above — so reskinning the base class alone left every hover state
+   (dropdown/combobox option rows, list rows, buttons) falling through to
+   Tailwind's literal near-white gray-50/100/200 on hover. That's how a
+   combobox option's hover highlight could render as a stark white patch
+   independent of any brand color — and combined with light,
+   accent-derived text (e.g. text-clinic-300, always skewed toward white),
+   went fully invisible on hover. Same fix, just for the hover pseudo-class
+   selector too — `!important` because (confirmed by inspecting Vite's dev
+   CSS output) Tailwind emits `hover:` variants in a later chunk than its
+   plain utilities, landing after this file in the cascade despite this
+   file coming after `@tailwind utilities;` in source, so — unlike the
+   plain classes above — source order alone doesn't let this win. */
+.hover\:bg-gray-50:hover { background-color: rgba(255, 255, 255, 0.04) !important; }
+.hover\:bg-gray-100:hover { background-color: rgba(255, 255, 255, 0.08) !important; }
+.hover\:bg-gray-200:hover { background-color: rgba(255, 255, 255, 0.14) !important; }
 
 .text-gray-900 { color: var(--text-offwhite); }
 .text-gray-800 { color: rgba(242, 238, 232, 0.9); }
