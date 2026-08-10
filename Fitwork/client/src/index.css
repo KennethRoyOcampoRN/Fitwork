@@ -3,19 +3,22 @@
 @tailwind utilities;
 
 /*
- * Default clinic brand colors. Admin > Settings > Branding overrides
+ * Default clinic brand colors — teal Primary, white Accent — match the
+ * server's DEFAULT_PRIMARY_COLOR/DEFAULT_ACCENT_COLOR (settings.ts), so an
+ * unbranded install and a "Reset to defaults" land on the same colors as
+ * this pre-JS fallback. Admin > Settings > Branding overrides
  * --clinic-primary/--clinic-accent at runtime via inline styles on :root
  * (see lib/branding.tsx) — every other shade below is derived from those
  * two via color-mix(), so the whole palette re-themes live from just the
  * two picked colors, with no rebuild and no per-shade computation in JS.
  * --clinic-primary also drives certificate/report letterhead colors
- * server-side, so it's left as the original brand orange; the page-chrome
- * dark charcoal-teal look below (--app-bg-gradient) is a separate, UI-only
- * token instead of being layered onto --clinic-primary.
+ * server-side; the page-chrome dark charcoal-teal look below
+ * (--app-bg-gradient) is a separate, UI-only token instead of being
+ * layered onto --clinic-primary.
  */
 :root {
-  --clinic-primary: #D2571A;
-  --clinic-accent: #08514E;
+  --clinic-primary: #08514E;
+  --clinic-accent: #ffffff;
   --clinic-50: color-mix(in srgb, var(--clinic-accent) 10%, white);
   --clinic-100: color-mix(in srgb, var(--clinic-accent) 20%, white);
   --clinic-200: color-mix(in srgb, var(--clinic-accent) 35%, white);

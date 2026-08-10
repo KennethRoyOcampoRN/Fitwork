@@ -105,8 +105,8 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   const value: BrandingContextValue = {
     logoUrl: settings?.hasLogo ? `/api/settings/branding/logo?v=${version}` : null,
     backgroundUrl: settings?.hasBackground ? `/api/settings/branding/background?v=${version}` : null,
-    primaryColor: settings?.primaryColor || "#D2571A",
-    accentColor: settings?.accentColor || "#08514E",
+    primaryColor: settings?.primaryColor || "#08514E",
+    accentColor: settings?.accentColor || "#ffffff",
     appName: settings?.appName || "FitWork",
     appTagline: settings?.appTagline || "by Clinicore — Employee Health Records System",
     address: settings?.address ?? null,

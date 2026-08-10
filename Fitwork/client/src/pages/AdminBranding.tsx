@@ -3,8 +3,8 @@ import { useBranding } from "../lib/branding";
 import { ApiError } from "../lib/api";
 import { deriveCertificatePrefix } from "../lib/certificatePrefix";
 
-const DEFAULT_PRIMARY = "#D2571A";
-const DEFAULT_ACCENT = "#08514E";
+const DEFAULT_PRIMARY = "#08514E";
+const DEFAULT_ACCENT = "#ffffff";
 const DEFAULT_APP_NAME = "FitWork";
 const DEFAULT_APP_TAGLINE = "by Clinicore — Employee Health Records System";
 
