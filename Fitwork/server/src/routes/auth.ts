@@ -3,7 +3,7 @@ import { z } from "zod";
 import rateLimit from "express-rate-limit";
 import { prisma } from "../lib/prisma";
 import {
-  attemptLogin, createSession, destroySession, SESSION_COOKIE,
+  attemptLogin, createSession, destroySession, SESSION_COOKIE, SESSION_COOKIE_OPTIONS,
   hashPassword, validatePasswordPolicy, verifyPassword,
 } from "../services/auth";
 import { writeAudit } from "../services/audit";
@@ -47,9 +47,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
 
   const session = await createSession(result.user.id, req.ip, req.headers["user-agent"]);
   res.cookie(SESSION_COOKIE, session.id, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: config.nodeEnv !== "development",
+    ...SESSION_COOKIE_OPTIONS,
     maxAge: config.sessionAbsoluteHours * 60 * 60 * 1000,
   });
 
@@ -66,7 +64,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
 
 authRouter.post("/logout", requireAuth, async (req, res) => {
   if (req.sessionId) await destroySession(req.sessionId);
-  res.clearCookie(SESSION_COOKIE);
+  res.clearCookie(SESSION_COOKIE, SESSION_COOKIE_OPTIONS);
   await writeAudit({ req, userId: req.currentUser?.id, action: "LOGOUT" });
   res.json({ ok: true });
 });
