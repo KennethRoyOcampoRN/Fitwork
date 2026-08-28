@@ -17,6 +17,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { config } from "./config";
 import { detectLanIp } from "./lib/network";
+import { hasTlsCerts, tlsKeyPath, tlsCertPath } from "./lib/tls";
 import { authRouter } from "./routes/auth";
 import { usersRouter } from "./routes/users";
 import { auditRouter } from "./routes/audit";
@@ -61,13 +62,9 @@ process.on("uncaughtException", (err) => {
 
 const app = express();
 
-// Whether HTTPS will actually be used — decided here, before any
-// middleware is built, rather than inside startServer() at the bottom of
-// this file, because the CSP below needs to know it too (see
-// upgradeInsecureRequests comment).
-const tlsKeyPath = path.resolve(__dirname, "../../server", config.tlsKeyPath);
-const tlsCertPath = path.resolve(__dirname, "../../server", config.tlsCertPath);
-const hasTlsCerts = fs.existsSync(tlsKeyPath) && fs.existsSync(tlsCertPath);
+// Whether HTTPS will actually be used — imported from lib/tls (see there),
+// since the CSP below needs to know it too (see upgradeInsecureRequests
+// comment) as does the session cookie's `secure` flag in services/auth.ts.
 
 app.use(
   helmet({

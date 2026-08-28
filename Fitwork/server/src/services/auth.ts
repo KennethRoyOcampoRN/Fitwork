@@ -3,11 +3,25 @@ import { v4 as uuid } from "uuid";
 import { DateTime } from "luxon";
 import { prisma } from "../lib/prisma";
 import { config } from "../config";
+import { hasTlsCerts } from "../lib/tls";
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
 export const SESSION_COOKIE = "fitwork_sid";
+
+// Shared by every res.cookie()/res.clearCookie() call for this cookie
+// (login, logout, and the expired-session cleanup in middleware/auth.ts)
+// so all three stay in lockstep. `secure` is derived from whether this
+// server instance actually ended up serving HTTPS (see lib/tls.ts) rather
+// than NODE_ENV or any other static assumption — a Secure cookie issued
+// while actually serving plain HTTP is silently dropped by the browser on
+// every request after login, which looks exactly like an immediate logout.
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "strict" as const,
+  secure: hasTlsCerts,
+};
 
 export async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password, { type: argon2.argon2id });

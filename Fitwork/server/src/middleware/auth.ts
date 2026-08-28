@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getValidSession, SESSION_COOKIE } from "../services/auth";
+import { getValidSession, SESSION_COOKIE, SESSION_COOKIE_OPTIONS } from "../services/auth";
 import { Role } from "../config";
 
 declare global {
@@ -24,7 +24,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   const session = await getValidSession(sessionId);
   if (!session) {
-    res.clearCookie(SESSION_COOKIE);
+    res.clearCookie(SESSION_COOKIE, SESSION_COOKIE_OPTIONS);
     return res.status(401).json({ error: "Session expired" });
   }
 

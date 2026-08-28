@@ -233,8 +233,35 @@ export interface ParsedRow {
   isBlank: boolean;
 }
 
+// A cell holding a live formula reads back from ExcelJS as an object —
+// { formula, result } (or { sharedFormula, result } for a formula copied
+// down a column) — rather than a plain value. `result` is whatever value
+// the formula last evaluated to *inside the source workbook*, which may be
+// stale (recalculated on open, but not guaranteed if the file was saved
+// with calculation off) or depend on a lookup table/other sheet that isn't
+// part of the uploaded file at all — neither is trustworthy for import, so
+// every formula cell is rejected outright rather than having its cached
+// result quietly unwrapped and imported as if it were typed in directly.
+// This also fixes cell values silently stringifying to the literal text
+// "[object Object]": the old code only special-cased CellHyperlinkValue's
+// `.text`, so a formula object fell through to the generic String(cell)
+// below, which produced "[object Object]" instead of the real value or an
+// error — sometimes accepted as text, sometimes failing the NUMBER/DATE
+// parse with a useless message naming no actual cause.
+function isFormulaCell(cell: ExcelJS.CellValue): cell is ExcelJS.CellFormulaValue | ExcelJS.CellSharedFormulaValue {
+  return typeof cell === "object" && cell !== null && ("formula" in cell || "sharedFormula" in cell);
+}
+
 function parseCellValue(cell: ExcelJS.CellValue, field: FieldDef): { value: unknown; error?: string } {
   if (cell === null || cell === undefined || cell === "") return { value: null };
+
+  if (isFormulaCell(cell)) {
+    const formula = "formula" in cell && cell.formula ? cell.formula : `shared formula, ref ${(cell as ExcelJS.CellSharedFormulaValue).sharedFormula}`;
+    return {
+      value: null,
+      error: `"${field.label}" column contains a live formula (${formula}) instead of a value — select the cell(s), Copy, then Paste Special → Values only, and re-upload.`,
+    };
+  }
 
   const strVal = typeof cell === "object" && cell !== null && "text" in (cell as object)
     ? String((cell as { text: unknown }).text)
