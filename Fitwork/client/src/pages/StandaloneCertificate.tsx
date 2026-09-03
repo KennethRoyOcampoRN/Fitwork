@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ApiError } from "../lib/api";
+import { printObjectUrl } from "../lib/download";
 
 const EMPTY_FORM = {
   name: "", address: "",
@@ -17,12 +18,28 @@ export default function StandaloneCertificate() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issuedControlNumber, setIssuedControlNumber] = useState<string | null>(null);
+  // Kept alive (not revoked at download time) so the "Print" button below
+  // can reuse the same blob instead of re-generating the certificate — a
+  // standalone certificate's PDF is never written to disk (see the file
+  // header comment), so there's no /:id/file to print from later the way
+  // CertificateTab's employee certificates can.
+  const lastObjectUrlRef = useRef<string | null>(null);
+
+  function revokeLastObjectUrl() {
+    if (lastObjectUrlRef.current) {
+      URL.revokeObjectURL(lastObjectUrlRef.current);
+      lastObjectUrlRef.current = null;
+    }
+  }
+
+  useEffect(() => () => revokeLastObjectUrl(), []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     setIssuedControlNumber(null);
+    revokeLastObjectUrl();
     try {
       const res = await fetch("/api/certificates/standalone", {
         method: "POST",
@@ -37,11 +54,11 @@ export default function StandaloneCertificate() {
       const controlNumber = res.headers.get("X-Control-Number");
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
+      lastObjectUrlRef.current = objectUrl;
       const a = document.createElement("a");
       a.href = objectUrl;
       a.download = `medical-certificate-${controlNumber || "certificate"}.pdf`;
       a.click();
-      URL.revokeObjectURL(objectUrl);
 
       setIssuedControlNumber(controlNumber);
       setForm(EMPTY_FORM);
@@ -50,6 +67,10 @@ export default function StandaloneCertificate() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function printLast() {
+    if (lastObjectUrlRef.current) printObjectUrl(lastObjectUrlRef.current);
   }
 
   return (
@@ -75,7 +96,12 @@ export default function StandaloneCertificate() {
         <label className="block text-xs font-semibold text-gray-600 pt-1">REMARKS</label>
         <textarea placeholder="Remarks" value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} className="border rounded px-2 py-1 w-full" rows={2} required />
         {error && <p className="text-red-600 text-xs">{error}</p>}
-        {issuedControlNumber && <p className="text-green-700 text-xs">Certificate {issuedControlNumber} issued and downloaded.</p>}
+        {issuedControlNumber && (
+          <p className="text-green-700 text-xs flex items-center gap-2">
+            Certificate {issuedControlNumber} issued and downloaded.
+            <button type="button" onClick={printLast} className="text-clinic-600 underline shrink-0">Print</button>
+          </p>
+        )}
         <button disabled={busy} className="bg-clinic-600 text-white rounded px-4 py-1.5">{busy ? "Generating..." : "Generate certificate"}</button>
       </form>
     </div>

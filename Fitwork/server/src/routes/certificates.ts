@@ -98,7 +98,16 @@ certificatesRouter.post("/employee", requireRole(...ISSUER_ROLES), async (req, r
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="medical-certificate-${controlNumber}.pdf"`);
     res.setHeader("X-Control-Number", controlNumber);
-    res.setHeader("Access-Control-Expose-Headers", "X-Control-Number");
+    // Lets the client offer an instant "Print" action right after issuing
+    // without first re-listing this employee's certificates to look up
+    // which row is the one just created — it can go straight to
+    // GET /:id/file with this id. Only set here, not on /standalone below:
+    // a standalone certificate's PDF is deliberately never persisted to
+    // disk (see the comment above that route), so there's no /:id/file to
+    // print from later — the client already has the blob it needs, from
+    // this same response.
+    res.setHeader("X-Certificate-Id", certificate.id);
+    res.setHeader("Access-Control-Expose-Headers", "X-Control-Number, X-Certificate-Id");
     res.send(buffer);
   });
 });

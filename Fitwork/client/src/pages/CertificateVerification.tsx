@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { useBranding } from "../lib/branding";
 import { deriveCertificatePrefix } from "../lib/certificatePrefix";
-import { downloadFile } from "../lib/download";
+import { downloadFile, printFile } from "../lib/download";
 
 interface EmployeeResult {
   type: "EMPLOYEE";
@@ -43,12 +43,20 @@ export default function CertificateVerification() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   async function downloadCertificate(result: EmployeeResult) {
     setDownloading(true);
     const err = await downloadFile(`/api/certificates/${result.id}/file`, `medical-certificate-${result.controlNumber}.pdf`);
     if (err) setError(err);
     setDownloading(false);
+  }
+
+  async function printCertificate(result: EmployeeResult) {
+    setPrinting(true);
+    const err = await printFile(`/api/certificates/${result.id}/file`);
+    if (err) setError(err);
+    setPrinting(false);
   }
 
   async function search(e: React.FormEvent) {
@@ -95,13 +103,22 @@ export default function CertificateVerification() {
         <div className="bg-white border rounded-xl p-4 text-sm space-y-1">
           <div className="flex items-center justify-between mb-2">
             <p className="text-green-700 font-medium">Valid certificate — employee record</p>
-            <button
-              onClick={() => downloadCertificate(result)}
-              disabled={downloading}
-              className="text-xs text-clinic-600 underline disabled:opacity-50"
-            >
-              {downloading ? "Downloading..." : "Download certificate PDF"}
-            </button>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={() => printCertificate(result)}
+                disabled={printing}
+                className="text-xs text-clinic-600 underline disabled:opacity-50"
+              >
+                {printing ? "Printing..." : "Print"}
+              </button>
+              <button
+                onClick={() => downloadCertificate(result)}
+                disabled={downloading}
+                className="text-xs text-clinic-600 underline disabled:opacity-50"
+              >
+                {downloading ? "Downloading..." : "Download certificate PDF"}
+              </button>
+            </div>
           </div>
           <div>Control number: {result.controlNumber}</div>
           <div>Issued: {new Date(result.issuedAt).toLocaleString()}</div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { downloadFile } from "../lib/download";
+import { downloadFile, printFile } from "../lib/download";
 
 interface Certificate {
   id: string;
@@ -39,6 +39,7 @@ export default function CertificateTab({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [lastControlNumber, setLastControlNumber] = useState<string | null>(null);
+  const [lastCertificateId, setLastCertificateId] = useState<string | null>(null);
 
   async function load() {
     setCertificates(await api.get<Certificate[]>(`/certificates/employee/${employeeId}`));
@@ -58,6 +59,7 @@ export default function CertificateTab({
     setBusy(true);
     setError(null);
     setLastControlNumber(null);
+    setLastCertificateId(null);
     try {
       const res = await fetch("/api/certificates/employee", {
         method: "POST",
@@ -70,6 +72,7 @@ export default function CertificateTab({
         throw new ApiError(res.status, data.error || "Could not generate certificate");
       }
       const controlNumber = res.headers.get("X-Control-Number");
+      const certificateId = res.headers.get("X-Certificate-Id");
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -79,6 +82,7 @@ export default function CertificateTab({
       URL.revokeObjectURL(objectUrl);
 
       setLastControlNumber(controlNumber);
+      setLastCertificateId(certificateId);
       setForm(emptyForm(employeeName, employeeAddress));
       setShowForm(false);
       await load();
@@ -91,6 +95,10 @@ export default function CertificateTab({
 
   async function redownload(cert: Certificate) {
     await downloadFile(`/api/certificates/${cert.id}/file`, `medical-certificate-${cert.controlNumber}.pdf`);
+  }
+
+  async function printCert(certificateId: string) {
+    await printFile(`/api/certificates/${certificateId}/file`);
   }
 
   return (
@@ -124,7 +132,12 @@ export default function CertificateTab({
       )}
 
       {lastControlNumber && (
-        <p className="text-sm text-green-700 mb-3">Certificate {lastControlNumber} issued and downloaded.</p>
+        <p className="text-sm text-green-700 mb-3 flex items-center gap-2">
+          Certificate {lastControlNumber} issued and downloaded.
+          {lastCertificateId && (
+            <button onClick={() => printCert(lastCertificateId)} className="text-xs text-clinic-600 underline shrink-0">Print</button>
+          )}
+        </p>
       )}
 
       <div className="space-y-2">
@@ -138,6 +151,7 @@ export default function CertificateTab({
                   {new Date(c.issuedAt).toLocaleDateString()} — {expanded === c.id ? "Hide" : "Details"}
                 </span>
               </button>
+              <button onClick={() => printCert(c.id)} className="text-xs text-clinic-600 underline shrink-0">Print</button>
               <button onClick={() => redownload(c)} className="text-xs text-clinic-600 underline shrink-0">Download</button>
             </div>
             {expanded === c.id && (

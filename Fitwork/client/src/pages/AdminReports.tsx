@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { printFile } from "../lib/download";
 
 const CATEGORIES = [
   { value: "DOCTOR", label: "Doctor's Notes" },
@@ -22,29 +23,45 @@ export default function AdminReports() {
     setCategories((cur) => cur.includes(value) ? cur.filter((c) => c !== value) : [...cur, value]);
   }
 
-  async function download() {
+  function exportUrl(): string | null {
     if (categories.length === 0) {
       setError("Select at least one category");
-      return;
+      return null;
     }
+    const params = new URLSearchParams({ from, to, categories: categories.join(",") });
+    return `/api/notes/reports/export?${params.toString()}`;
+  }
+
+  async function download() {
+    const url = exportUrl();
+    if (!url) return;
     setBusy(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ from, to, categories: categories.join(",") });
-      const res = await fetch(`/api/notes/reports/export?${params.toString()}`, { credentials: "include" });
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "Export failed");
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = objectUrl;
       a.download = `clinic-report-${from}_to_${to}.pdf`;
       a.click();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(objectUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Export failed");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function print() {
+    const url = exportUrl();
+    if (!url) return;
+    setBusy(true);
+    setError(null);
+    const err = await printFile(url);
+    if (err) setError(err);
+    setBusy(false);
   }
 
   return (
@@ -80,9 +97,14 @@ export default function AdminReports() {
           </div>
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button onClick={download} disabled={busy || !from || !to} className="bg-clinic-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
-          {busy ? "Preparing..." : "Download report"}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={print} disabled={busy || !from || !to} className="border border-clinic-300 text-clinic-600 rounded px-4 py-2 text-sm disabled:opacity-50">
+            {busy ? "Preparing..." : "Print"}
+          </button>
+          <button onClick={download} disabled={busy || !from || !to} className="bg-clinic-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
+            {busy ? "Preparing..." : "Download report"}
+          </button>
+        </div>
       </div>
     </div>
   );

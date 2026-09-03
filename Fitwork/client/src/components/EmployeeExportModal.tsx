@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { printFile } from "../lib/download";
 
 const CATEGORIES = [
   { value: "DOCTOR", label: "Doctor's Notes" },
@@ -30,32 +31,49 @@ export default function EmployeeExportModal({
     setCategories((cur) => cur.includes(value) ? cur.filter((c) => c !== value) : [...cur, value]);
   }
 
-  async function download() {
+  function exportUrl(): string | null {
     if (categories.length === 0) {
       setError("Select at least one category");
-      return;
+      return null;
     }
+    const params = new URLSearchParams({ categories: categories.join(",") });
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    return `/api/employees/${employeeId}/export?${params.toString()}`;
+  }
+
+  async function download() {
+    const url = exportUrl();
+    if (!url) return;
     setBusy(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ categories: categories.join(",") });
-      if (from) params.set("from", from);
-      if (to) params.set("to", to);
-      const res = await fetch(`/api/employees/${employeeId}/export?${params.toString()}`, { credentials: "include" });
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error((await res.json()).error || "Export failed");
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = objectUrl;
       a.download = `${employeeCode}-export-${new Date().toISOString().slice(0, 10)}.pdf`;
       a.click();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(objectUrl);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Export failed");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function print() {
+    const url = exportUrl();
+    if (!url) return;
+    setBusy(true);
+    setError(null);
+    const err = await printFile(url);
+    if (err) setError(err);
+    else onClose();
+    setBusy(false);
   }
 
   return (
@@ -90,6 +108,9 @@ export default function EmployeeExportModal({
         {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
         <div className="flex justify-end gap-2">
           <button onClick={onClose} disabled={busy} className="px-4 py-2 text-sm">Cancel</button>
+          <button onClick={print} disabled={busy} className="border border-clinic-300 text-clinic-600 rounded px-4 py-2 text-sm disabled:opacity-50">
+            {busy ? "Preparing..." : "Print"}
+          </button>
           <button onClick={download} disabled={busy} className="bg-clinic-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50">
             {busy ? "Preparing..." : "Download PDF"}
           </button>
