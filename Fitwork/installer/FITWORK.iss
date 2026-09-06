@@ -157,6 +157,15 @@ var
   // shown together in a single summary MsgBox at the end instead of one
   // popup per failure.
   StepWarnings: String;
+  // Set once RunPostInstallSteps has actually tried (or skipped) HTTPS
+  // setup, read later by CurPageChanged's wpFinished handler to decide
+  // which message to show - ssPostInstall (where RunPostInstallSteps runs)
+  // always completes before the wizard reaches its Finished page, so this
+  // is safe to read there unconditionally. Declared here (not local to
+  // SetupHttpsForServerMode, further down the file) because CurPageChanged,
+  // which reads it, is defined earlier in the file than that procedure -
+  // Pascal Script requires a var declared before its first use.
+  HttpsConfigured: Boolean;
 
 // True once the mode picker page has actually been reached/answered -
 // Check: functions run during the [Run]/[UninstallRun] phase, long after
@@ -175,6 +184,30 @@ var
 function IsServerMode(): Boolean;
 begin
   Result := (ModePage <> nil) and ModePage.Values[1];
+end;
+
+// True iff S is non-empty and every character is a digit 0-9 - used by
+// NextButtonClick's port validation instead of Delphi's Val() procedure,
+// which (caught only by an actual ISCC compile, not by reading the script)
+// does not exist in Inno Setup's Pascal Script: it has no Val identifier at
+// all, built-in or otherwise. StrToIntDef alone can't replace it either,
+// since it silently accepts some malformed input (leading '+', trailing
+// whitespace inside the string, etc.) as a parsed number instead of
+// rejecting it - checking the string is all digits first, then parsing,
+// keeps the original "reject anything but a plain number" intent.
+function IsAllDigits(const S: String): Boolean;
+var
+  I: Integer;
+begin
+  Result := S <> '';
+  for I := 1 to Length(S) do
+  begin
+    if (S[I] < '0') or (S[I] > '9') then
+    begin
+      Result := False;
+      Exit;
+    end;
+  end;
 end;
 
 // The port this install actually uses - PortPage's answer (validated as
@@ -463,23 +496,30 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 var
   BackupProvided: Boolean;
   PortStr: String;
-  PortNum, PortCode: Integer;
+  PortNum: Integer;
 begin
   Result := True;
   if CurPageID = PortPage.ID then
   begin
     PortStr := Trim(PortPage.Values[0]);
-    Val(PortStr, PortNum, PortCode);
-    // PortCode <> 0 means Val hit a non-digit before the end of the string
-    // (e.g. "8443x", "", or "-1", which Val treats as a leading '-' it
-    // can't place in an unsigned read this way) - StrToIntDef would accept
-    // some of those (leading/trailing garbage in a couple of edge cases)
-    // silently as a wrong number instead of rejecting them outright, which
-    // is exactly what a port field can't afford to do quietly.
-    if (PortCode <> 0) or (PortNum < 1) or (PortNum > 65535) then
+    // IsAllDigits rejects anything Val used to catch via its error-code
+    // output (a leading '-', a trailing non-digit, an empty string) before
+    // StrToIntDef ever sees it - StrToIntDef alone would accept some of
+    // those silently as a wrong number instead of rejecting them outright,
+    // which is exactly what a port field can't afford to do quietly.
+    if (not IsAllDigits(PortStr)) then
     begin
       MsgBox('Enter a valid port number between 1 and 65535.', mbError, MB_OK);
       Result := False;
+    end
+    else
+    begin
+      PortNum := StrToIntDef(PortStr, 0);
+      if (PortNum < 1) or (PortNum > 65535) then
+      begin
+        MsgBox('Enter a valid port number between 1 and 65535.', mbError, MB_OK);
+        Result := False;
+      end;
     end;
   end
   else if CurPageID = AdminPage.ID then
@@ -754,14 +794,6 @@ begin
   StringChangeEx(Result, '\', '\\', False);
   StringChangeEx(Result, '"', '\"', False);
 end;
-
-// Set once RunPostInstallSteps has actually tried (or skipped) HTTPS setup,
-// read later by CurPageChanged's wpFinished handler to decide which
-// message to show - ssPostInstall (where RunPostInstallSteps runs) always
-// completes before the wizard reaches its Finished page, so this is safe
-// to read there unconditionally.
-var
-  HttpsConfigured: Boolean;
 
 // Automatic HTTPS for Server-mode installs, using the bundled mkcert.exe
 // (staged by build.ps1 the same way nssm.exe already is) instead of
