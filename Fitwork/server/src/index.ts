@@ -18,6 +18,7 @@ import cors from "cors";
 import { config } from "./config";
 import { detectLanIp } from "./lib/network";
 import { hasTlsCerts, tlsKeyPath, tlsCertPath } from "./lib/tls";
+import { requestLogger } from "./middleware/requestLogger";
 import { authRouter } from "./routes/auth";
 import { usersRouter } from "./routes/users";
 import { auditRouter } from "./routes/audit";
@@ -93,6 +94,7 @@ app.use(
 );
 app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser());
+app.use(requestLogger);
 
 if (config.nodeEnv === "development") {
   app.use(cors({ origin: "https://localhost:5173", credentials: true }));
