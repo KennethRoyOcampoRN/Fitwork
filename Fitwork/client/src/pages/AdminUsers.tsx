@@ -24,6 +24,11 @@ export default function AdminUsers() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetDone, setResetDone] = useState(false);
 
+  const [editTarget, setEditTarget] = useState<UserRow | null>(null);
+  const [editForm, setEditForm] = useState({ username: "", fullName: "" });
+  const [editBusy, setEditBusy] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   async function load() {
     setUsers(await api.get<UserRow[]>("/users"));
   }
@@ -67,6 +72,35 @@ export default function AdminUsers() {
     }
   }
 
+  function openEditModal(u: UserRow) {
+    setEditTarget(u);
+    setEditForm({ username: u.username, fullName: u.fullName });
+    setEditError(null);
+  }
+
+  function closeEditModal() {
+    setEditTarget(null);
+    setEditError(null);
+  }
+
+  async function saveEdit() {
+    if (!editTarget) return;
+    const username = editForm.username.trim();
+    const fullName = editForm.fullName.trim();
+    if (!username || !fullName) return;
+    setEditBusy(true);
+    setEditError(null);
+    try {
+      await api.patch(`/users/${editTarget.id}`, { username, fullName });
+      closeEditModal();
+      await load();
+    } catch (err) {
+      setEditError(err instanceof ApiError ? err.message : "Could not save changes");
+    } finally {
+      setEditBusy(false);
+    }
+  }
+
   return (
     <div>
       <h1 className="text-lg font-semibold mb-4">User management</h1>
@@ -105,6 +139,7 @@ export default function AdminUsers() {
                     >
                       {u.isActive ? "Deactivate" : "Reactivate"}
                     </button>
+                    <button onClick={() => openEditModal(u)} className="text-xs text-clinic-300 underline">Edit</button>
                     <button onClick={() => setResetTarget(u)} className="text-xs text-clinic-300 underline">Reset password</button>
                   </td>
                 </tr>
@@ -113,6 +148,36 @@ export default function AdminUsers() {
           </table>
         </div>
       </div>
+
+      {editTarget && (
+        <ConfirmModal
+          title={`Edit ${editTarget.username}`}
+          confirmLabel={editBusy ? "Saving..." : "Save"}
+          confirmDisabled={!editForm.username.trim() || !editForm.fullName.trim()}
+          busy={editBusy}
+          onConfirm={saveEdit}
+          onCancel={closeEditModal}
+        >
+          <label className="block text-sm font-medium mb-1">Username</label>
+          <input
+            value={editForm.username}
+            onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+            className="w-full border rounded px-2 py-1 text-sm mb-2"
+            autoFocus
+          />
+          <label className="block text-sm font-medium mb-1">Full name</label>
+          <input
+            value={editForm.fullName}
+            onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+            className="w-full border rounded px-2 py-1 text-sm mb-2"
+          />
+          <p className="text-xs text-gray-500 mb-2">
+            Past clinical notes keep the name that was recorded at the time they were written —
+            correcting a name here will not change how earlier notes display.
+          </p>
+          {editError && <p className="text-xs text-red-600 mb-2">{editError}</p>}
+        </ConfirmModal>
+      )}
 
       {resetTarget && (
         <ConfirmModal

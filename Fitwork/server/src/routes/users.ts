@@ -51,6 +51,7 @@ usersRouter.post("/", async (req, res) => {
 });
 
 const updateUserSchema = z.object({
+  username: z.string().min(3).max(50).optional(),
   fullName: z.string().min(1).optional(),
   role: z.enum(ROLES).optional(),
   licenseNumber: z.string().optional(),
@@ -63,6 +64,11 @@ usersRouter.patch("/:id", async (req, res) => {
 
   const target = await prisma.user.findUnique({ where: { id: req.params.id } });
   if (!target) return res.status(404).json({ error: "User not found" });
+
+  if (parsed.data.username && parsed.data.username !== target.username) {
+    const existing = await prisma.user.findUnique({ where: { username: parsed.data.username } });
+    if (existing) return res.status(409).json({ error: "Username already exists" });
+  }
 
   const wasDeactivated = parsed.data.isActive === false && target.isActive;
 
