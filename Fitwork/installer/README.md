@@ -95,11 +95,37 @@ Everything below needs manual confirmation:
       updates the firewall checkbox label and LAN-IP message to the new
       value rather than the first one entered.
 - [ ] The desktop shortcut opens the default browser to the right URL
-- [ ] "Set Up HTTPS" Start Menu shortcut: with mkcert already installed
-      separately, running it generates `server\certs\dev-key.pem` /
-      `dev-cert.pem`, and restarting the service (via `services.msc`)
-      picks it up (`https://localhost:8443` should then work; check
-      `server\logs\service-out.log` for "listening (HTTPS)" vs "(HTTP)")
+- [ ] **New: automatic HTTPS (Server mode).** A fresh Server-mode install
+      should, with no separate mkcert install and no manual step, produce
+      `server\certs\dev-key.pem`/`dev-cert.pem`, start the service already
+      on HTTPS (check `server\logs\service-out.log` for "listening
+      (HTTPS)", not "(HTTP)" — no service restart should be needed, unlike
+      the manual tool), and the Finished page should say HTTPS is already
+      set up rather than "this is plain HTTP for now". Confirm
+      `https://localhost:<port>` works on this PC without a browser
+      warning (mkcert's local CA should already be trusted here), and that
+      another device on the LAN gets the expected one-time untrusted-
+      certificate warning at `https://<LAN IP>:<port>` until that device is
+      given the mkcert root CA (see docs\INSTALL.md). Also worth forcing
+      the failure path once: temporarily rename/remove
+      `{app}\vendor\mkcert\mkcert.exe` before installing (or block it some
+      other way) and confirm the install still completes on plain HTTP,
+      with a line about it in the end-of-install warnings summary, rather
+      than the whole install failing.
+      **Explicitly flagged, not just "untested": whether `mkcert.exe
+      -install` truly runs headless when launched unattended from this
+      already-elevated installer process** — the whole reason the two
+      mkcert calls go through `RunWithTimeout` (30s each) instead of
+      `RunStep`'s indefinite wait is that this can't be confirmed without
+      a real Windows box; if it does hang, this should time out, kill the
+      process, and fall back to plain HTTP rather than freeze the
+      installer. Confirm that fallback path actually triggers if a hang
+      does occur.
+- [ ] **New: "Regenerate HTTPS Certificate" shortcut** (renamed from "Set
+      Up HTTPS") still works as a manual fallback — with mkcert installed
+      separately on PATH (this shortcut is not wired to the bundled
+      `vendor\mkcert\mkcert.exe`), running it regenerates the certificate
+      and a service restart (via `services.msc`) picks up the change.
 - [x] Uninstalling: the "delete database, backups, and logs?" prompt
       appears; choosing Yes correctly clears `data\` and `storage\`
       (confirmed live — fresh timestamps, no stale content).
@@ -209,7 +235,21 @@ LAN-detection page were built to handle correctly.
   the nssm download in `build.ps1` is only verified by being fetched over
   HTTPS from the official site — not checksum-verified like the Node
   runtime is. If you have a known-good hash for the pinned version,
-  add verification the same way.
+  add verification the same way. Same gap, same reasoning, for the mkcert
+  download added alongside it.
+- **Automatic HTTPS (Server mode) uses two Win32 API imports
+  (`OpenProcess`/`WaitForSingleObject`/`GetExitCodeProcess`/
+  `TerminateProcess`/`CloseHandle` via `external` declarations) to give the
+  two `mkcert.exe` calls a real 30s timeout** — Inno Setup's own `Exec()`
+  has no timeout, only "wait forever" or "don't wait at all", and whether
+  `mkcert.exe -install` truly runs headless when launched unattended from
+  an already-elevated installer process (vs. some prompt neither this file
+  nor its author can see coming) isn't something confirmable outside a
+  real Windows box. This is the reason `RunWithTimeout` exists instead of
+  reusing `RunStep` for just these two calls — needs a real install to
+  confirm both that the external function declarations compile as written
+  and that the timeout path (kill + fall back to plain HTTP via
+  `StepWarnings`) actually fires correctly if `mkcert.exe` does hang.
 - Data (`data\`, `storage\`) lives under `{app}` (Program Files) rather
   than `%ProgramData%`. This matches the existing convention from
   `docs/INSTALL.md`/PR #24 and is fine for a small single-clinic

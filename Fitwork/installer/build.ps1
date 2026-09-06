@@ -28,12 +28,17 @@
 #      excludes tsx/typescript, and never touches client's own deps at all.
 #   3. Download a portable Node.js Windows x64 runtime (pinned version,
 #      checksum-verified against Node's own published SHASUMS256.txt)
-#   4. Download nssm (pinned version)
-#   5. Invoke ISCC.exe against FITWORK.iss to produce the final .exe
+#   4. Download mkcert (pinned version) - lets FITWORK.iss's
+#      SetupHttpsForServerMode generate a trusted HTTPS certificate
+#      automatically during a Server-mode install, instead of requiring the
+#      admin to separately install mkcert first
+#   5. Download nssm (pinned version)
+#   6. Invoke ISCC.exe against FITWORK.iss to produce the final .exe
 
 $ErrorActionPreference = "Stop"
 
 $NodeVersion = "20.18.1"
+$MkcertVersion = "1.4.4"
 $NssmVersion = "2.24"
 
 $RepoRoot = Resolve-Path "$PSScriptRoot\.."
@@ -126,7 +131,7 @@ $ClientStage = Join-Path $StageDir "client"
 if (Test-Path $ClientStage) { Remove-Item -Recurse -Force $ClientStage }
 Copy-Item "$BuildRoot\client\dist" $ClientStage -Recurse
 
-Write-Host "==> [3/5] Downloading portable Node.js v$NodeVersion (win-x64)"
+Write-Host "==> [3/6] Downloading portable Node.js v$NodeVersion (win-x64)"
 $NodeZipName = "node-v$NodeVersion-win-x64.zip"
 $NodeZipPath = Join-Path $DownloadCache $NodeZipName
 $NodeUrl = "https://nodejs.org/dist/v$NodeVersion/$NodeZipName"
@@ -146,7 +151,26 @@ if (Test-Path $NodeExtractDir) { Remove-Item -Recurse -Force $NodeExtractDir }
 Expand-Archive -Path $NodeZipPath -DestinationPath $DownloadCache -Force
 Move-Item (Join-Path $DownloadCache "node-v$NodeVersion-win-x64") $NodeExtractDir
 
-Write-Host "==> [4/5] Downloading nssm v$NssmVersion"
+Write-Host "==> [4/6] Downloading mkcert v$MkcertVersion"
+# mkcert publishes a raw per-platform .exe as its release asset (no zip),
+# unlike Node/nssm below. Like nssm, it doesn't publish a SHASUMS file - the
+# same accepted compromise as nssm's own note just below applies here too:
+# fetched over HTTPS from the official GitHub release, not checksum-
+# verified. If you have a known-good hash for the version you're pinning,
+# verify it here the same way as the Node download above.
+$MkcertExeName = "mkcert-v$MkcertVersion-windows-amd64.exe"
+$MkcertPath = Join-Path $DownloadCache $MkcertExeName
+$MkcertUrl = "https://github.com/FiloSottile/mkcert/releases/download/v$MkcertVersion/$MkcertExeName"
+
+if (-not (Test-Path $MkcertPath)) {
+    Invoke-WebRequest -Uri $MkcertUrl -OutFile $MkcertPath
+}
+
+$MkcertStage = Join-Path $StageDir "mkcert"
+New-Item -ItemType Directory -Force -Path $MkcertStage | Out-Null
+Copy-Item $MkcertPath (Join-Path $MkcertStage "mkcert.exe")
+
+Write-Host "==> [5/6] Downloading nssm v$NssmVersion"
 # nssm.cc doesn't publish a SHASUMS file the way nodejs.org does - if you
 # have a known-good hash for the version you're pinning, verify it here the
 # same way as the Node download above. At minimum, download over HTTPS from
@@ -168,7 +192,7 @@ New-Item -ItemType Directory -Force -Path $NssmStage | Out-Null
 # this path if a different nssm version changes that layout.
 Copy-Item (Join-Path $NssmExtractDir "nssm-$NssmVersion\win64\nssm.exe") (Join-Path $NssmStage "nssm.exe")
 
-Write-Host "==> [5/5] Compiling installer with ISCC"
+Write-Host "==> [6/6] Compiling installer with ISCC"
 $IsccCommand = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
 if ($IsccCommand) {
     $IsccPath = $IsccCommand.Source

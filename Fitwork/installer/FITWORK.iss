@@ -13,8 +13,8 @@
 ;
 ; Expects installer/build.ps1 to have already run npm build + staged a
 ; production-only server/node_modules + a portable Node runtime + nssm.exe
-; into installer/dist/stage/ before this script is compiled - see
-; build.ps1 for exactly what it assembles and where.
+; + mkcert.exe into installer/dist/stage/ before this script is compiled -
+; see build.ps1 for exactly what it assembles and where.
 
 #define AppName "FITWORK"
 #define AppVersion "1.0.0"
@@ -62,6 +62,7 @@ Name: "{app}\server\logs"
 ; Everything under installer\dist\stage\ is assembled by build.ps1:
 ;   stage\node\...          portable Node runtime (node.exe + deps)
 ;   stage\nssm\nssm.exe     service wrapper
+;   stage\mkcert\mkcert.exe automatic HTTPS cert generation (Server mode)
 ;   stage\server\...        server\dist, server\prisma, server\package.json,
 ;                           a *production-only* server\node_modules
 ;   stage\client\...        client\dist (built SPA)
@@ -71,6 +72,10 @@ Name: "{app}\server\logs"
 ; time rather than a stale template.
 Source: "{#StageDir}\node\*"; DestDir: "{app}\vendor\node"; Flags: recursesubdirs ignoreversion
 Source: "{#StageDir}\nssm\nssm.exe"; DestDir: "{app}\vendor\nssm"; Flags: ignoreversion
+; Used by SetupHttpsForServerMode in [Code] to generate the HTTPS
+; certificate automatically during a Server-mode install - see build.ps1
+; for where this is downloaded from.
+Source: "{#StageDir}\mkcert\mkcert.exe"; DestDir: "{app}\vendor\mkcert"; Flags: ignoreversion
 Source: "{#StageDir}\server\*"; DestDir: "{app}\server"; Flags: recursesubdirs ignoreversion; Excludes: ".env,.env.example"
 ; The running app resolves the client bundle as ../../client/dist relative
 ; to server/dist/index.js (see server/src/index.ts) - DestDir here MUST be
@@ -114,7 +119,11 @@ Source: "{#StageDir}\server\dist\lib\network.js"; DestDir: "{tmp}"; Flags: dontc
 Name: "{autodesktop}\{#AppName}"; Filename: "{code:GetAppUrl}"
 Name: "{group}\{#AppName}"; Filename: "{code:GetAppUrl}"
 Name: "{group}\Open Server Folder"; Filename: "{app}\server"
-Name: "{group}\Set Up HTTPS (optional)"; Filename: "{app}\Setup-HTTPS.bat"
+; Server-mode installs now get HTTPS set up automatically during install
+; (see SetupHttpsForServerMode in [Code]) - this shortcut is now a manual
+; fallback/regenerate tool (e.g. after the LAN IP changes, or to add an
+; extra hostname), not the primary way to get HTTPS working.
+Name: "{group}\Regenerate HTTPS Certificate (optional)"; Filename: "{app}\Setup-HTTPS.bat"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 
 [Run]
@@ -411,12 +420,20 @@ begin
   begin
     if IsServerMode() then
     begin
-      WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10 + #13#10 +
-        'FITWORK is running as a Windows Service and will start automatically on boot.' + #13#10 +
-        'Other PCs on this network can connect at: http://' + DetectedLanIpCache + ':' + GetPort() + #13#10 + #13#10 +
-        'This is plain HTTP for now - webcam capture will only work from this PC until you set up HTTPS. ' +
-        'To enable it, install mkcert (see docs\INSTALL.md in the install folder), then use the ' +
-        '"Set Up HTTPS" shortcut in the Start Menu folder.';
+      if HttpsConfigured then
+        WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10 + #13#10 +
+          'FITWORK is running as a Windows Service and will start automatically on boot.' + #13#10 +
+          'Other PCs on this network can connect at: https://' + DetectedLanIpCache + ':' + GetPort() + #13#10 + #13#10 +
+          'HTTPS is already set up on this PC. Each OTHER PC or phone that connects will show a one-time ' +
+          'browser security warning until it''s told to trust this PC''s certificate - see docs\INSTALL.md ' +
+          'for how to copy and install it there.'
+      else
+        WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10 + #13#10 +
+          'FITWORK is running as a Windows Service and will start automatically on boot.' + #13#10 +
+          'Other PCs on this network can connect at: http://' + DetectedLanIpCache + ':' + GetPort() + #13#10 + #13#10 +
+          'This is plain HTTP for now - webcam capture will only work from this PC. Automatic HTTPS setup ' +
+          'did not complete (see the summary after this) - use the "Regenerate HTTPS Certificate" shortcut ' +
+          'in the Start Menu folder to try again, or see docs\INSTALL.md.';
     end
     else
     begin
@@ -617,6 +634,80 @@ begin
   end;
 end;
 
+// Direct Win32 API imports, used only by RunWithTimeout below. Inno Setup's
+// Exec() has no timeout of its own - ewWaitUntilTerminated (what RunStep
+// above uses) waits forever, ewNoWait doesn't wait at all - so a real
+// timeout needs the raw OS primitives instead: launch with ewNoWait (which
+// hands back the new process's PID, not an exit code, in that mode), open
+// a handle to it, and wait on that handle with an actual millisecond
+// timeout. `external` DLL imports are a documented, long-stable Inno Setup
+// Pascal Script feature (see "Support Functions Reference" in the Inno
+// Setup help) - not a hack, but still unverified here like everything else
+// in this file, since there's no Windows machine to compile this against.
+const
+  SYNCHRONIZE = $00100000;
+  PROCESS_QUERY_INFORMATION = $0400;
+  PROCESS_TERMINATE = $0001;
+  WAIT_OBJECT_0 = 0;
+
+function OpenProcess(dwDesiredAccess: LongWord; bInheritHandle: LongBool; dwProcessId: LongWord): LongWord;
+  external 'OpenProcess@kernel32.dll stdcall';
+function WaitForSingleObject(hHandle: LongWord; dwMilliseconds: LongWord): LongWord;
+  external 'WaitForSingleObject@kernel32.dll stdcall';
+function GetExitCodeProcess(hProcess: LongWord; var lpExitCode: LongWord): LongBool;
+  external 'GetExitCodeProcess@kernel32.dll stdcall';
+function TerminateProcess(hProcess: LongWord; uExitCode: LongWord): LongBool;
+  external 'TerminateProcess@kernel32.dll stdcall';
+function CloseHandle(hObject: LongWord): LongBool;
+  external 'CloseHandle@kernel32.dll stdcall';
+
+// Runs Filename/Params with a hard wall-clock timeout, unlike RunStep's
+// indefinite wait - used only for the two mkcert.exe calls in
+// SetupHttpsForServerMode below, where whether mkcert.exe -install truly
+// runs headless when launched from an already-elevated, unattended
+// installer process (no interactive desktop session for any unexpected
+// prompt to be shown on, or is there one? - not something confirmable
+// without a real Windows box) is exactly the kind of failure mode an
+// indefinite wait turns into a permanently hung install. On timeout,
+// TerminateProcess kills it rather than leaving an orphaned process behind
+// - ResultCode comes back as -2 specifically so callers can tell "timed
+// out" apart from an ordinary nonzero exit code.
+function RunWithTimeout(const Filename, Params, WorkingDir: String; TimeoutMs: LongWord; var ResultCode: Integer): Boolean;
+var
+  Pid: Integer;
+  ProcHandle: LongWord;
+  WaitResult: LongWord;
+  ExitCodeW: LongWord;
+begin
+  Result := False;
+  ResultCode := -1;
+  if not Exec(Filename, Params, WorkingDir, SW_HIDE, ewNoWait, Pid) then
+    Exit;
+
+  ProcHandle := OpenProcess(SYNCHRONIZE or PROCESS_QUERY_INFORMATION or PROCESS_TERMINATE, False, Pid);
+  if ProcHandle = 0 then
+    Exit;
+
+  try
+    WaitResult := WaitForSingleObject(ProcHandle, TimeoutMs);
+    if WaitResult = WAIT_OBJECT_0 then
+    begin
+      GetExitCodeProcess(ProcHandle, ExitCodeW);
+      ResultCode := ExitCodeW;
+      Result := True;
+    end
+    else
+    begin
+      // Timed out (or the wait call itself failed) - kill it rather than
+      // leave an unattended install with an orphaned process still running.
+      TerminateProcess(ProcHandle, 1);
+      ResultCode := -2;
+    end;
+  finally
+    CloseHandle(ProcHandle);
+  end;
+end;
+
 // Exec() can't capture a launched process's stdout/stderr directly - same
 // cmd.exe-redirect-to-a-temp-file workaround as DetectLanIpViaApp above.
 // Only used for the recovery-key step below, which has a fixed, hardcoded
@@ -662,6 +753,94 @@ begin
   Result := S;
   StringChangeEx(Result, '\', '\\', False);
   StringChangeEx(Result, '"', '\"', False);
+end;
+
+// Set once RunPostInstallSteps has actually tried (or skipped) HTTPS setup,
+// read later by CurPageChanged's wpFinished handler to decide which
+// message to show - ssPostInstall (where RunPostInstallSteps runs) always
+// completes before the wizard reaches its Finished page, so this is safe
+// to read there unconditionally.
+var
+  HttpsConfigured: Boolean;
+
+// Automatic HTTPS for Server-mode installs, using the bundled mkcert.exe
+// (staged by build.ps1 the same way nssm.exe already is) instead of
+// requiring the admin to separately download and install mkcert first, or
+// remembering to double-click Setup-HTTPS.bat afterwards - that manual
+// tool still exists (retitled "Regenerate HTTPS Certificate" in [Icons])
+// for later use, e.g. after a DHCP-reassigned LAN IP, but first-install
+// setup no longer depends on it. Standalone mode skips this entirely -
+// nothing else on the network reaches that machine, so there's no browser-
+// trust problem for it to solve. Runs BEFORE nssm start (see
+// RunPostInstallSteps below) so the very first launch already comes up on
+// HTTPS, rather than needing the restart-the-service step the manual tool
+// requires. Every failure here is non-critical - added to StepWarnings,
+// same as the firewall/power steps - since the app runs fine over plain
+// HTTP; this only affects whether webcam capture works from other PCs.
+procedure SetupHttpsForServerMode();
+var
+  MkcertExe, CertsDir, KeyPath, CertPath, Hosts: String;
+  ResultCode: Integer;
+begin
+  HttpsConfigured := False;
+  if not IsServerMode() then
+    Exit;
+
+  MkcertExe := ExpandConstant('{app}\vendor\mkcert\mkcert.exe');
+  if not FileExists(MkcertExe) then
+  begin
+    StepWarnings := StepWarnings +
+      '- Setting up HTTPS (mkcert.exe missing from this install) - see docs\INSTALL.md to set it up manually' + #13#10;
+    Exit;
+  end;
+
+  CertsDir := ExpandConstant('{app}\server\certs');
+  ForceDirectories(CertsDir);
+  // Matches config.tlsKeyPath/tlsCertPath's defaults (./certs/dev-key.pem,
+  // ./certs/dev-cert.pem relative to the server directory) - see
+  // GenerateEnvFile above - so the running app picks these up with no
+  // additional .env change needed.
+  KeyPath := CertsDir + '\dev-key.pem';
+  CertPath := CertsDir + '\dev-cert.pem';
+
+  // Same DetectedLanIpCache the wizard's own on-screen LAN-IP message
+  // already uses (see CurPageChanged) - one detection, shown and used
+  // consistently, rather than a second independent call that could
+  // theoretically disagree with what the admin was told during setup.
+  Hosts := 'localhost 127.0.0.1';
+  if (DetectedLanIpCache <> '') and (Pos('unknown', DetectedLanIpCache) = 0) then
+    Hosts := Hosts + ' ' + DetectedLanIpCache;
+
+  WizardForm.StatusLabel.Caption := 'Setting up HTTPS...';
+
+  // 30s is generous for what's normally a sub-second operation on both
+  // calls - long enough that a slow/loaded PC doesn't get killed for
+  // legitimately still working, short enough that an unattended install
+  // isn't stuck for minutes if this does hang on something unexpected.
+  if not (RunWithTimeout(MkcertExe, '-install', '', 30000, ResultCode) and (ResultCode = 0)) then
+  begin
+    if ResultCode = -2 then
+      StepWarnings := StepWarnings +
+        '- Installing the HTTPS certificate authority (timed out after 30s, so it was stopped) - see docs\INSTALL.md to set up HTTPS manually' + #13#10
+    else
+      StepWarnings := StepWarnings +
+        '- Installing the HTTPS certificate authority (exit code ' + IntToStr(ResultCode) + ') - see docs\INSTALL.md to set up HTTPS manually' + #13#10;
+    Exit;
+  end;
+
+  if not (RunWithTimeout(MkcertExe,
+     '-key-file "' + KeyPath + '" -cert-file "' + CertPath + '" ' + Hosts, '', 30000, ResultCode) and (ResultCode = 0)) then
+  begin
+    if ResultCode = -2 then
+      StepWarnings := StepWarnings +
+        '- Generating the HTTPS certificate (timed out after 30s, so it was stopped) - see docs\INSTALL.md to set up HTTPS manually' + #13#10
+    else
+      StepWarnings := StepWarnings +
+        '- Generating the HTTPS certificate (exit code ' + IntToStr(ResultCode) + ') - see docs\INSTALL.md to set up HTTPS manually' + #13#10;
+    Exit;
+  end;
+
+  HttpsConfigured := True;
 end;
 
 procedure RunPostInstallSteps();
@@ -806,6 +985,12 @@ begin
   // DelTree just removed, before nssm (which does not create missing
   // directories for its own log files) is ever configured to write there.
   ForceDirectories(ExpandConstant('{app}\server\logs'));
+
+  // Before the service is installed/started below, so a Server-mode
+  // install's very first launch already comes up on HTTPS - see
+  // SetupHttpsForServerMode's own comment for why. No-op (HttpsConfigured
+  // just stays False) for Standalone mode.
+  SetupHttpsForServerMode();
 
   // AppParameters is set to the RELATIVE path "dist\index.js", not an
   // absolute "{app}\server\dist\index.js" - found live (twice) that this is
