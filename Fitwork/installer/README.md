@@ -81,6 +81,19 @@ Everything below needs manual confirmation:
       firewall show rule name="FITWORK"` actually showing the rule added;
       power settings changed as expected (`powercfg /query` or Settings >
       Power, standby/hibernate off).
+- [ ] **New: custom port.** Choose a non-default port (e.g. 9000) on the
+      new Network Port page and confirm it's actually used everywhere:
+      `.env`'s `PORT=`, the startup banner, the desktop/Start Menu
+      shortcuts (both should open `http://localhost:9000`), the Server
+      Options page's firewall checkbox label and the LAN-IP message below
+      it, the Finished page's message, `netsh advfirewall firewall show
+      rule name="FITWORK"` showing `LocalPort: 9000`, and LAN access from
+      another device at `http://<LAN IP>:9000`. Also confirm: entering a
+      non-numeric value or one outside 1-65535 is rejected with the error
+      message rather than accepted; going back from Server Options to the
+      Network Port page, changing the port, then going forward again
+      updates the firewall checkbox label and LAN-IP message to the new
+      value rather than the first one entered.
 - [ ] The desktop shortcut opens the default browser to the right URL
 - [ ] "Set Up HTTPS" Start Menu shortcut: with mkcert already installed
       separately, running it generates `server\certs\dev-key.pem` /
@@ -229,8 +242,22 @@ LAN-detection page were built to handle correctly.
   above.
 - The mode-picker screen only covers what PR B asked for (Standalone vs.
   Server, firewall, power settings). It doesn't yet offer to configure a
-  custom install path for the database/backups beyond the fixed defaults,
-  or let the admin pick a non-default port.
+  custom install path for the database/backups beyond the fixed defaults.
+- ~~Doesn't let the admin pick a non-default port.~~ Fixed: a new
+  `PortPage` (shown for both modes, right after the mode picker) asks for
+  the port, defaulting to `{#AppPort}`/8443, validated as 1-65535. Every
+  place that used to read the `{#AppPort}` compile-time constant directly —
+  `.env`'s `PORT=`, the firewall rule's `localport=`, both Icons shortcuts
+  (now via a `{code:GetAppUrl}` constant, since Icons entries are resolved
+  at compile time otherwise), the Server Options checkbox label, the LAN-IP
+  label, and both Finished-page messages — now goes through a `GetPort()`
+  function instead, so a non-default choice is threaded through
+  consistently rather than only some of them picking it up. Untested on
+  real Windows yet — see the checklist above; in particular, whether
+  `TInputOptionWizardPage.CheckListBox.Items[i] := '...'` actually renames
+  a checkbox's label at runtime without disturbing its checked state is a
+  Pascal Script wizard API detail that needs a real Inno Setup compile to
+  confirm, not just this file's own review.
 - ~~The admin-account wizard page collected one admin, not the standing
   second admin `docs/RECOVERY.md` Scenario B calls the "do this first,
   always" path.~~ Fixed: the same page now also collects a backup admin's

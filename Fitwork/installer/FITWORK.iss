@@ -19,6 +19,11 @@
 #define AppName "FITWORK"
 #define AppVersion "1.0.0"
 #define AppPublisher "FITWORK"
+// Default only - the actual port used by a given install is whatever the
+// PortPage wizard question resolves to at runtime (see GetPort() in
+// [Code]), not this compile-time constant. Still needed as the seed value
+// for PortPage.Values[0] below, since that assignment runs before the user
+// has answered anything.
 #define AppPort "8443"
 #define ServiceName "FITWORK"
 #define StageDir "dist\stage"
@@ -103,8 +108,11 @@ Source: "{#StageDir}\server\dist\lib\network.js"; DestDir: "{tmp}"; Flags: dontc
 ; .ico asset, so these use Explorer's default icon rather than pointing
 ; IconFilename at something that can't actually supply one (a .js file
 ; has no icon resource; node.exe's is generic and not worth the wiring).
-Name: "{autodesktop}\{#AppName}"; Filename: "http://localhost:{#AppPort}"
-Name: "{group}\{#AppName}"; Filename: "http://localhost:{#AppPort}"
+; {code:GetAppUrl} rather than a literal http://localhost:{#AppPort} - these
+; shortcuts are created from PortPage's actual chosen value (see [Code]),
+; which may differ from the {#AppPort} compile-time default.
+Name: "{autodesktop}\{#AppName}"; Filename: "{code:GetAppUrl}"
+Name: "{group}\{#AppName}"; Filename: "{code:GetAppUrl}"
 Name: "{group}\Open Server Folder"; Filename: "{app}\server"
 Name: "{group}\Set Up HTTPS (optional)"; Filename: "{app}\Setup-HTTPS.bat"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
@@ -129,6 +137,7 @@ Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=
 [Code]
 var
   ModePage: TInputOptionWizardPage;
+  PortPage: TInputQueryWizardPage;
   ServerOptionsPage: TInputOptionWizardPage;
   AdminPage: TInputQueryWizardPage;
   BackupAdminPage: TInputQueryWizardPage;
@@ -157,6 +166,32 @@ var
 function IsServerMode(): Boolean;
 begin
   Result := (ModePage <> nil) and ModePage.Values[1];
+end;
+
+// The port this install actually uses - PortPage's answer (validated as
+// 1-65535 in NextButtonClick), defaulting to {#AppPort}. Every place that
+// used to reference {#AppPort} directly (the .env PORT value, the firewall
+// rule, the Icons shortcuts via GetAppUrl below, and the wizard's own
+// on-screen messages) now goes through this instead, so a non-default
+// choice is threaded through consistently rather than only some of them
+// picking it up.
+function GetPort(): String;
+begin
+  if PortPage <> nil then
+    Result := Trim(PortPage.Values[0])
+  else
+    Result := '{#AppPort}';
+end;
+
+// {code:...} constant for [Icons]' Filename - called after the wizard is
+// done (icons are created during real installation, not during the
+// pre-install pages), so GetPort() already reflects whatever was actually
+// chosen by this point. Takes a Param string because every {code:...}
+// constant function must, per Inno Setup's required signature - unused here
+// since there's nothing to parameterize.
+function GetAppUrl(Param: String): String;
+begin
+  Result := 'http://localhost:' + GetPort();
 end;
 
 function ShouldAddFirewallRule(): Boolean;
@@ -263,12 +298,28 @@ begin
   ModePage.Add('Server - other PCs on this network will connect to this one');
   ModePage.SelectedValueIndex := 0;
 
-  ServerOptionsPage := CreateInputOptionPage(ModePage.ID,
+  // Asked for both modes, not just Server - Standalone still binds this
+  // port on localhost, so a conflict with another program on this PC
+  // matters either way. Placed before ServerOptionsPage/AdminPage/
+  // BackupAdminPage (chained off PortPage.ID below) so GetPort() already
+  // has its final answer by the time anything downstream - the firewall
+  // rule text, the LAN IP label, .env - needs to read it.
+  PortPage := CreateInputQueryPage(ModePage.ID,
+    'Network Port',
+    'Which port should FITWORK listen on?',
+    'The default (8443) works for almost every install. Only change this if you know you need to - for ' +
+    'example, another program on this PC is already using 8443. Whatever you choose here is threaded ' +
+    'through the app itself, the Windows Firewall rule, and every shortcut/message that shows the ' +
+    'connection address.');
+  PortPage.Add('Port:', False);
+  PortPage.Values[0] := '{#AppPort}';
+
+  ServerOptionsPage := CreateInputOptionPage(PortPage.ID,
     'Server Mode Options',
     'These only apply because you chose Server mode.',
     'Recommended for most installs - leave both checked unless you have a reason not to:',
     False, False);
-  ServerOptionsPage.Add('Add a Windows Firewall rule so other PCs can reach this one on port {#AppPort}');
+  ServerOptionsPage.Add('Add a Windows Firewall rule so other PCs can reach this one on port ' + GetPort());
   ServerOptionsPage.Add('Prevent this PC from sleeping, so staff can always reach the server');
   ServerOptionsPage.Values[0] := True;
   ServerOptionsPage.Values[1] := True;
@@ -336,13 +387,24 @@ begin
   // copied to {app} - DetectLanIpViaApp() deliberately runs against the
   // dontcopy/ExtractTemporaryFile {tmp} copies for exactly this reason, not
   // {app}\..., which doesn't exist yet at this point in the wizard.
-  if (CurPageID = ServerOptionsPage.ID) and not LanIpDetected then
+  if CurPageID = ServerOptionsPage.ID then
   begin
-    DetectedLanIpCache := DetectLanIpViaApp();
-    LanIpLabel.Caption := 'Other PCs will connect at: http://' + DetectedLanIpCache + ':{#AppPort}' + #13#10 +
+    if not LanIpDetected then
+    begin
+      DetectedLanIpCache := DetectLanIpViaApp();
+      LanIpDetected := True;
+    end;
+    // Rebuilt every time this page is (re)entered, not just once like the
+    // LAN-IP shell-out above - unlike that detection, GetPort() is free to
+    // call repeatedly, and it needs to be: the user can go Back to PortPage,
+    // change the port, then Next forward into this page again, and both the
+    // checkbox label and the message below must reflect that new value, not
+    // whatever was true the first time this page was shown.
+    ServerOptionsPage.CheckListBox.Items[0] :=
+      'Add a Windows Firewall rule so other PCs can reach this one on port ' + GetPort();
+    LanIpLabel.Caption := 'Other PCs will connect at: http://' + DetectedLanIpCache + ':' + GetPort() + #13#10 +
       'Wrong adapter? You can change this later by editing SERVER_MODE and re-running setup, or checking ' +
       'the PC''s network settings directly - this is just a best-effort guess.';
-    LanIpDetected := True;
   end;
 
   if CurPageID = wpFinished then
@@ -351,7 +413,7 @@ begin
     begin
       WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10 + #13#10 +
         'FITWORK is running as a Windows Service and will start automatically on boot.' + #13#10 +
-        'Other PCs on this network can connect at: http://' + DetectedLanIpCache + ':{#AppPort}' + #13#10 + #13#10 +
+        'Other PCs on this network can connect at: http://' + DetectedLanIpCache + ':' + GetPort() + #13#10 + #13#10 +
         'This is plain HTTP for now - webcam capture will only work from this PC until you set up HTTPS. ' +
         'To enable it, install mkcert (see docs\INSTALL.md in the install folder), then use the ' +
         '"Set Up HTTPS" shortcut in the Start Menu folder.';
@@ -360,7 +422,7 @@ begin
     begin
       WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10 + #13#10 +
         'FITWORK is running as a Windows Service and will start automatically on boot, available at ' +
-        'http://localhost:{#AppPort} on this PC.';
+        'http://localhost:' + GetPort() + ' on this PC.';
     end;
   end;
 end;
@@ -383,9 +445,27 @@ end;
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
   BackupProvided: Boolean;
+  PortStr: String;
+  PortNum, PortCode: Integer;
 begin
   Result := True;
-  if CurPageID = AdminPage.ID then
+  if CurPageID = PortPage.ID then
+  begin
+    PortStr := Trim(PortPage.Values[0]);
+    Val(PortStr, PortNum, PortCode);
+    // PortCode <> 0 means Val hit a non-digit before the end of the string
+    // (e.g. "8443x", "", or "-1", which Val treats as a leading '-' it
+    // can't place in an unsigned read this way) - StrToIntDef would accept
+    // some of those (leading/trailing garbage in a couple of edge cases)
+    // silently as a wrong number instead of rejecting them outright, which
+    // is exactly what a port field can't afford to do quietly.
+    if (PortCode <> 0) or (PortNum < 1) or (PortNum > 65535) then
+    begin
+      MsgBox('Enter a valid port number between 1 and 65535.', mbError, MB_OK);
+      Result := False;
+    end;
+  end
+  else if CurPageID = AdminPage.ID then
   begin
     if Trim(AdminPage.Values[0]) = '' then
     begin
@@ -495,7 +575,7 @@ begin
 
   Content :=
     'DATABASE_PATH=../data/fitwork.db' + #13#10 +
-    'PORT={#AppPort}' + #13#10 +
+    'PORT=' + GetPort() + #13#10 +
     'NODE_ENV=production' + #13#10 +
     'SERVER_MODE=' + ServerModeValue + #13#10 +
     'SELF_EDIT_WINDOW_MINUTES=15' + #13#10 +
@@ -768,7 +848,7 @@ begin
   // them either way.
   if ShouldAddFirewallRule() then
     RunStep('Adding firewall rule...', ExpandConstant('{sys}\netsh.exe'),
-      'advfirewall firewall add rule name="{#AppName}" dir=in action=allow protocol=TCP localport={#AppPort}',
+      'advfirewall firewall add rule name="{#AppName}" dir=in action=allow protocol=TCP localport=' + GetPort(),
       '', False);
   if ShouldDisableSleep() then
   begin
