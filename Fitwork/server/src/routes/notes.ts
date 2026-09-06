@@ -42,13 +42,42 @@ function handleNoteError(res: import("express").Response, err: unknown) {
   throw err;
 }
 
+// Every note/addendum read below still `include`s the live author/voidedBy
+// relation for role/isActive (those SHOULD reflect current status — e.g.
+// NoteCard's "(inactive)" badge), but the displayed NAME must come from the
+// at-write-time snapshot columns (see schema.prisma), not the live join,
+// so correcting a user's name later can't retroactively change whose
+// byline appears on a note they already wrote. Applied at this one
+// boundary rather than in every route below, so nothing downstream needs
+// to know these are snapshots rather than a live relation.
+function withNameSnapshots<
+  T extends {
+    authorNameSnapshot: string;
+    author: { fullName: string; [k: string]: unknown };
+    voidedByNameSnapshot?: string | null;
+    voidedBy?: { fullName: string; [k: string]: unknown } | null;
+    addenda?: { authorNameSnapshot: string; author: { fullName: string; [k: string]: unknown } }[];
+  },
+>(note: T) {
+  return {
+    ...note,
+    author: { ...note.author, fullName: note.authorNameSnapshot },
+    ...(note.voidedBy
+      ? { voidedBy: { ...note.voidedBy, fullName: note.voidedByNameSnapshot || note.voidedBy.fullName } }
+      : {}),
+    ...(note.addenda
+      ? { addenda: note.addenda.map((a) => ({ ...a, author: { ...a.author, fullName: a.authorNameSnapshot } })) }
+      : {}),
+  };
+}
+
 notesRouter.post("/", async (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
   const { visitDateTime, followUpDate, ...rest } = parsed.data;
 
   try {
-    const note = await createNote(req.currentUser!.id, req.currentUser!.role, {
+    const note = await createNote(req.currentUser!.id, req.currentUser!.fullName, req.currentUser!.role, {
       ...rest,
       visitDateTime: visitDateTime ? new Date(visitDateTime) : undefined,
       followUpDate: followUpDate ? new Date(followUpDate) : undefined,
@@ -115,7 +144,7 @@ notesRouter.post("/:id/addendum", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
   try {
-    const addendum = await addAddendum(req.params.id, req.currentUser!.id, req.currentUser!.role, parsed.data.body);
+    const addendum = await addAddendum(req.params.id, req.currentUser!.id, req.currentUser!.fullName, req.currentUser!.role, parsed.data.body);
     const note = await prisma.clinicalNote.findUnique({ where: { id: req.params.id } });
     await writeAudit({ req, userId: req.currentUser!.id, action: "ADD_ADDENDUM", entityType: "ClinicalNote", entityId: req.params.id, employeeId: note?.employeeId });
     res.status(201).json(addendum);
@@ -129,7 +158,7 @@ notesRouter.post("/:id/void", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: "A void reason is required" });
 
   try {
-    const note = await voidNote(req.params.id, req.currentUser!.id, parsed.data.reason);
+    const note = await voidNote(req.params.id, req.currentUser!.id, req.currentUser!.fullName, parsed.data.reason);
     await writeAudit({ req, userId: req.currentUser!.id, action: "VOID_NOTE", entityType: "ClinicalNote", entityId: note.id, employeeId: note.employeeId, details: { reason: parsed.data.reason } });
     res.json(note);
   } catch (err) {
@@ -147,7 +176,7 @@ notesRouter.get("/:id", async (req, res) => {
     },
   });
   if (!note) return res.status(404).json({ error: "Note not found" });
-  res.json(note);
+  res.json(withNameSnapshots(note));
 });
 
 // ── Permanent delete (admin-only) ──────────────────────────────────────
@@ -164,16 +193,13 @@ notesRouter.delete("/:id", requireRole("ADMIN"), async (req, res) => {
   const parsed = deleteNoteSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "A reason is required to permanently delete this note" });
 
-  const note = await prisma.clinicalNote.findUnique({
-    where: { id: req.params.id },
-    include: { author: { select: { fullName: true } } },
-  });
+  const note = await prisma.clinicalNote.findUnique({ where: { id: req.params.id } });
   if (!note) return res.status(404).json({ error: "Note not found" });
 
   await writeAudit({
     req, userId: req.currentUser!.id, action: "DELETE_NOTE", entityType: "ClinicalNote", entityId: note.id, employeeId: note.employeeId,
     details: {
-      noteType: note.noteType, visitDateTime: note.visitDateTime, originalAuthor: note.author.fullName,
+      noteType: note.noteType, visitDateTime: note.visitDateTime, originalAuthor: note.authorNameSnapshot,
       reason: parsed.data.reason,
     },
   });
@@ -201,7 +227,7 @@ notesRouter.get("/", async (req, res) => {
       addenda: { orderBy: { createdAt: "asc" }, include: { author: { select: { fullName: true, role: true } } } },
     },
   });
-  res.json(notes);
+  res.json(notes.map(withNameSnapshots));
 });
 
 // ── Note Ledger (global, cross-employee) ───────────────────────────────
@@ -249,7 +275,7 @@ notesRouter.get("/ledger/list", async (req, res) => {
       employee: { select: { id: true, employeeCode: true, firstName: true, lastName: true, department: true } },
     },
   });
-  res.json(notes);
+  res.json(notes.map(withNameSnapshots));
 });
 
 notesRouter.get("/ledger/export", async (req, res) => {
@@ -264,7 +290,6 @@ notesRouter.get("/ledger/export", async (req, res) => {
     where,
     orderBy: { visitDateTime: "desc" },
     include: {
-      author: { select: { fullName: true } },
       employee: { select: { employeeCode: true, firstName: true, lastName: true, department: true } },
     },
   });
@@ -292,7 +317,7 @@ notesRouter.get("/ledger/export", async (req, res) => {
       employeeName: `${n.employee.lastName}, ${n.employee.firstName}`,
       department: n.employee.department || "",
       noteType: n.noteType,
-      author: n.author.fullName,
+      author: n.authorNameSnapshot,
       chiefComplaint: n.chiefComplaint || "",
       disposition: n.disposition || "",
       isWorkRelated: n.isWorkRelated ? "Yes" : "No",
@@ -358,7 +383,6 @@ notesRouter.get("/reports/export", requireRole("ADMIN"), async (req, res) => {
       where: { noteType: nt, visitDateTime: { gte: fromDate, lte: toDate } },
       orderBy: { visitDateTime: "asc" },
       include: {
-        author: { select: { fullName: true } },
         employee: { select: { id: true, employeeCode: true, firstName: true, lastName: true, department: true, company: { select: { name: true } } } },
       },
     });
@@ -387,7 +411,7 @@ notesRouter.get("/reports/export", requireRole("ADMIN"), async (req, res) => {
       employeeName: `${n.employee.lastName}, ${n.employee.firstName}`,
       department: n.employee.department,
       companyName: n.employee.company?.name ?? null,
-      authorName: n.author.fullName,
+      authorName: n.authorNameSnapshot,
       chiefComplaint: n.chiefComplaint,
       assessment: n.assessment,
       diagnosis: n.diagnosis,

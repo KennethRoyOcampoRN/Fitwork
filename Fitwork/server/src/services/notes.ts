@@ -60,7 +60,7 @@ export interface NoteInput {
   isWorkRelated?: boolean;
 }
 
-export async function createNote(authorId: string, role: Role, input: NoteInput) {
+export async function createNote(authorId: string, authorFullName: string, role: Role, input: NoteInput) {
   if (!roleCanAuthor(role, input.noteType)) {
     throw new NoteError(403, `Role ${role} cannot author a ${input.noteType} note`);
   }
@@ -77,6 +77,7 @@ export async function createNote(authorId: string, role: Role, input: NoteInput)
     data: {
       employeeId: input.employeeId,
       authorId,
+      authorNameSnapshot: authorFullName,
       noteType: input.noteType,
       visitDateTime: input.visitDateTime ?? new Date(),
       visitCategory: input.visitCategory,
@@ -179,7 +180,7 @@ export async function reviewIllnessCategory(noteId: string, category: string | n
   });
 }
 
-export async function addAddendum(noteId: string, authorId: string, role: Role, body: string) {
+export async function addAddendum(noteId: string, authorId: string, authorFullName: string, role: Role, body: string) {
   if (!roleCanAddendum(role)) {
     throw new NoteError(403, "Only clinicians may add an addendum");
   }
@@ -187,12 +188,12 @@ export async function addAddendum(noteId: string, authorId: string, role: Role, 
   if (!note) throw new NoteError(404, "Note not found");
 
   return prisma.noteAddendum.create({
-    data: { noteId, authorId, body },
+    data: { noteId, authorId, authorNameSnapshot: authorFullName, body },
   });
 }
 
 /** Void, never delete (§7 rule 4) — own author only, mandatory reason. */
-export async function voidNote(noteId: string, voidedById: string, reason: string) {
+export async function voidNote(noteId: string, voidedById: string, voidedByFullName: string, reason: string) {
   const note = await prisma.clinicalNote.findUnique({ where: { id: noteId } });
   if (!note) throw new NoteError(404, "Note not found");
   if (note.authorId !== voidedById) {
@@ -207,6 +208,6 @@ export async function voidNote(noteId: string, voidedById: string, reason: strin
 
   return prisma.clinicalNote.update({
     where: { id: noteId },
-    data: { status: "VOIDED", voidReason: reason, voidedById, voidedAt: new Date() },
+    data: { status: "VOIDED", voidReason: reason, voidedById, voidedByNameSnapshot: voidedByFullName, voidedAt: new Date() },
   });
 }

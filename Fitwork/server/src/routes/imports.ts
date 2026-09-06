@@ -588,6 +588,9 @@ importsRouter.post("/:batchId/commit", async (req, res) => {
             data: {
               employeeId: row.data.employeeId as string,
               authorId: req.currentUser!.id,
+              authorNameSnapshot: row.data.legacy_author_name
+                ? String(row.data.legacy_author_name)
+                : req.currentUser!.fullName,
               noteType: String(row.data.note_type),
               visitDateTime: (row.data.visit_date as Date) ?? new Date(),
               chiefComplaint: row.data.chief_complaint as string | undefined,

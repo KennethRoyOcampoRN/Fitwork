@@ -367,7 +367,7 @@ employeesRouter.get("/:id", async (req, res) => {
 employeesRouter.get("/:id/overview", async (req, res) => {
   const employeeId = req.params.id;
   const [notes, meds, docs, apes, drugTests, preEmployments] = await Promise.all([
-    prisma.clinicalNote.findMany({ where: { employeeId }, orderBy: { visitDateTime: "desc" }, take: 10, include: { author: { select: { fullName: true } } } }),
+    prisma.clinicalNote.findMany({ where: { employeeId }, orderBy: { visitDateTime: "desc" }, take: 10 }),
     prisma.medicationLog.findMany({ where: { employeeId }, orderBy: { dispensedAt: "desc" }, take: 10, include: { dispensedBy: { select: { fullName: true } } } }),
     prisma.medicalDocument.findMany({ where: { employeeId }, orderBy: { createdAt: "desc" }, take: 10, include: { uploadedBy: { select: { fullName: true } } } }),
     prisma.annualPhysicalExam.findMany({ where: { employeeId }, orderBy: { examYear: "desc" }, take: 3 }),
@@ -382,7 +382,7 @@ employeesRouter.get("/:id/overview", async (req, res) => {
     ...notes.map((n) => ({
       type: "NOTE",
       date: n.visitDateTime,
-      label: `${n.noteType.charAt(0)}${n.noteType.slice(1).toLowerCase()}'s note by ${n.author.fullName}${n.chiefComplaint ? ` — ${n.chiefComplaint}` : ""}${n.status === "VOIDED" ? " (voided)" : ""}`,
+      label: `${n.noteType.charAt(0)}${n.noteType.slice(1).toLowerCase()}'s note by ${n.authorNameSnapshot}${n.chiefComplaint ? ` — ${n.chiefComplaint}` : ""}${n.status === "VOIDED" ? " (voided)" : ""}`,
       id: n.id,
       tab: n.noteType.toLowerCase(),
     })),
@@ -491,7 +491,6 @@ employeesRouter.get("/:id/export", async (req, res) => {
     const notes = await prisma.clinicalNote.findMany({
       where: { employeeId: employee.id, noteType: nt, ...(dateRange ? { visitDateTime: dateRange } : {}) },
       orderBy: { visitDateTime: "asc" },
-      include: { author: { select: { fullName: true } } },
     });
     sections.push({
       kind: "NOTES",
@@ -503,7 +502,7 @@ employeesRouter.get("/:id/export", async (req, res) => {
         employeeName,
         department: employee.department,
         companyName: employee.company?.name ?? null,
-        authorName: n.author.fullName,
+        authorName: n.authorNameSnapshot,
         chiefComplaint: n.chiefComplaint,
         assessment: n.assessment,
         diagnosis: n.diagnosis,

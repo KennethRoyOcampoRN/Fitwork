@@ -178,6 +178,16 @@ model ClinicalNote {
   employee       Employee @relation(fields: [employeeId], references: [id])
   authorId       String
   author         User     @relation("NoteAuthor", fields: [authorId], references: [id])
+  // Snapshot of author.fullName at the moment this note was written.
+  // authorId above still identifies the account (permissions, the self-edit
+  // window, filtering the Note Ledger by author), but every DISPLAY of who
+  // wrote this note reads this column instead of joining to the User's
+  // current name — an admin correcting a typo in someone's name later must
+  // not silently rewrite the byline on every note that person has ever
+  // authored. Same principle as the note-amendment time window (§7 rule 2):
+  // the clinical record can't be rewritten after the fact, whether the
+  // rewrite would touch content or authorship.
+  authorNameSnapshot String
   noteType       String
   visitDateTime  DateTime @default(now())
   visitCategory  String?
@@ -213,6 +223,9 @@ model ClinicalNote {
   voidReason     String?
   voidedById     String?
   voidedBy       User?    @relation("NoteVoider", fields: [voidedById], references: [id])
+  // Same reasoning as authorNameSnapshot above, applied to whoever voided
+  // this note. Null for a never-voided note.
+  voidedByNameSnapshot String?
   voidedAt       DateTime?
   sourceType     String   @default("MANUAL")
   legacyAuthorName String?
@@ -249,6 +262,8 @@ model NoteAddendum {
   note      ClinicalNote @relation(fields: [noteId], references: [id])
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
+  // Same reasoning as ClinicalNote.authorNameSnapshot.
+  authorNameSnapshot String
   body      String
   createdAt DateTime @default(now())
 

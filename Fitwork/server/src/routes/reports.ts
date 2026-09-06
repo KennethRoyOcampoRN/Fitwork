@@ -847,7 +847,6 @@ async function fetchCustomReportData(parsed: z.infer<typeof customReportSchema>,
     const notes = await prisma.clinicalNote.findMany({
       where: { employeeId: { in: empIds }, noteType: nt, ...(dateRange ? { visitDateTime: dateRange } : {}) },
       orderBy: { visitDateTime: "asc" },
-      include: { author: { select: { fullName: true } } },
     });
     sections.push({
       kind: "NOTES",
@@ -861,7 +860,7 @@ async function fetchCustomReportData(parsed: z.infer<typeof customReportSchema>,
           employeeName: `${e.lastName}, ${e.firstName}`,
           department: e.department,
           companyName: e.company?.name ?? null,
-          authorName: n.author.fullName,
+          authorName: n.authorNameSnapshot,
           chiefComplaint: n.chiefComplaint,
           assessment: n.assessment,
           diagnosis: n.diagnosis,
