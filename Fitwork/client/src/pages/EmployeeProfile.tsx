@@ -532,7 +532,19 @@ function VitalsTab({ employeeId, onRecorded }: { employeeId: string; onRecorded:
       return { date: (a.examDate ? new Date(a.examDate) : new Date(a.examYear, 0, 1)).getTime(), heightCm: a.heightCm, weightKg: a.weightKg, bmi: a.bmi, systolic, diastolic };
     }),
   ].sort((a, b) => a.date - b.date);
-  const latest = combined.length ? combined[combined.length - 1] : null;
+  // Most recent *known* value per field, not just the newest entry wholesale
+  // — a Weight-only check-in must not make an earlier Blood Pressure
+  // reading vanish from these tiles just because it's not on the newest row.
+  const latestOf = <K extends "heightCm" | "weightKg" | "bmi" | "systolic" | "diastolic">(key: K) => {
+    for (let i = combined.length - 1; i >= 0; i--) {
+      const value = combined[i][key];
+      if (value !== null && value !== undefined) return value;
+    }
+    return null;
+  };
+  const latest = combined.length
+    ? { heightCm: latestOf("heightCm"), weightKg: latestOf("weightKg"), bmi: latestOf("bmi"), systolic: latestOf("systolic"), diastolic: latestOf("diastolic") }
+    : null;
 
   return (
     <div className="space-y-4">

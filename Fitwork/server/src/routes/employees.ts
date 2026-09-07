@@ -12,6 +12,7 @@ import { employeeDir } from "../lib/storage";
 import { isAllowedUpload } from "../lib/magicBytes";
 import { config } from "../config";
 import { buildReportPdf, pickVitalsForNote, ReportSection, ReportNote, ReportMedication, ReportApe, ReportVitalsRecord, ReportDrugTest, ReportPreEmployment } from "../services/reportPdf";
+import { mergeLatestVitals } from "../services/vitals";
 import { getAppName } from "../services/appSettings";
 
 export const employeesRouter = Router();
@@ -354,10 +355,14 @@ employeesRouter.get("/:id", async (req, res) => {
   });
   if (!employee) return res.status(404).json({ error: "Employee not found" });
 
-  const latestVitals = await prisma.vitalsRecord.findFirst({
+  // Merged per-field across history, not just the newest row - see
+  // mergeLatestVitals's comment for why: a Weight-only check-in must not
+  // make an earlier Blood Pressure reading disappear from the header.
+  const vitalsHistory = await prisma.vitalsRecord.findMany({
     where: { employeeId: employee.id },
     orderBy: { recordedAt: "desc" },
   });
+  const latestVitals = mergeLatestVitals(vitalsHistory);
 
   await writeAudit({ req, userId: req.currentUser!.id, action: "VIEW_RECORD", entityType: "Employee", entityId: employee.id, employeeId: employee.id });
 
