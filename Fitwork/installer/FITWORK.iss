@@ -1,13 +1,19 @@
 ; FITWORK Windows installer - Inno Setup script.
 ;
-; IMPORTANT - written and reviewed, but NOT compiled or run: this repo is
-; developed in a Linux sandbox with no access to a Windows machine, Inno
-; Setup, or its ISCC compiler. Every Pascal Script function below follows
-; Inno Setup's documented, long-stable scripting API as precisely as I can
-; write it from specification, but it has not been verified by an actual
-; compile-and-run pass. Compile this on a real Windows machine with Inno
-; Setup installed (https://jrsoftware.org/isinfo.php) and fix forward from
-; whatever ISCC reports - see installer/README.md for the full build steps
+; IMPORTANT - this repo is developed in a Linux sandbox with no native
+; Windows machine or Inno Setup install, but the [Code] section has been
+; both compiled (ISCC 6.3.1 via Wine, using the npm-distributed Windows
+; binaries) and actually run (Setup.exe driven through its wizard pages
+; under Wine + a virtual display) from that sandbox - not just read - as
+; part of fixing prior bugs here (two ISCC compile errors, and a
+; CheckListBox.Items[] vs ItemCaption[] runtime crash on the Server Mode
+; Options page that only a real page-by-page run surfaced). That covers
+; the wizard pages' own Pascal Script logic; it does NOT cover anything
+; that only a genuine Windows install can exercise - real nssm/mkcert
+; binaries actually running, the Windows Service actually starting, the
+; firewall rule and power settings actually applying, or a browser
+; actually trusting the generated certificate. Still confirm those on a
+; real Windows machine - see installer/README.md for the full build steps
 ; and a manual test checklist for everything only a real Windows box can
 ; confirm.
 ;
@@ -442,7 +448,19 @@ begin
     // change the port, then Next forward into this page again, and both the
     // checkbox label and the message below must reflect that new value, not
     // whatever was true the first time this page was shown.
-    ServerOptionsPage.CheckListBox.Items[0] :=
+    // ItemCaption[], not Items[] - found live (real ISCC compile + an
+    // actual run of the compiled installer, not just reading the script):
+    // assigning a string directly to CheckListBox.Items[i] corrupts the
+    // control's internal item list down to a single entry - Items is
+    // backed by a TList of item records, not a plain TStrings, so writing
+    // a string into it does not do what it looks like it does. The visible
+    // symptom was the second checkbox ("Prevent this PC from sleeping...")
+    // silently vanishing the moment this page's LAN-IP detection finished,
+    // followed by a "List index out of bounds (1). TList range is 0..0"
+    // error loop the instant anything (ShouldDisableSleep, later redraws)
+    // tried to read index 1. ItemCaption[] is the actual supported API for
+    // renaming an item's displayed text without touching the list itself.
+    ServerOptionsPage.CheckListBox.ItemCaption[0] :=
       'Add a Windows Firewall rule so other PCs can reach this one on port ' + GetPort();
     LanIpLabel.Caption := 'Other PCs will connect at: http://' + DetectedLanIpCache + ':' + GetPort() + #13#10 +
       'Wrong adapter? You can change this later by editing SERVER_MODE and re-running setup, or checking ' +
